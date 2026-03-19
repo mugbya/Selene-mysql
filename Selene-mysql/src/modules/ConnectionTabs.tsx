@@ -20,7 +20,7 @@ export default function ConnectionTabs() {
     <div className="flex items-end border-b border-gray-300 bg-gray-100">
       {connectiontabs.map((tab) => {
         const isActive = tab.tabId === activeId;
-
+        
         return (
           <div
             key={tab.tabId}

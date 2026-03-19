@@ -31,6 +31,9 @@ pnpm add @monaco-editor/react sql-formatter @tanstack/react-virtual
 
 pnpm add tw-animate-css
 
+# 安装 node 类型定义
+pnpm add -D @types/node
+
 # 初始化  tailwindcss 相关配置
 pnpm exec tailwindcss-cli  init -p
 ```
