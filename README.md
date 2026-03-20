@@ -10,14 +10,13 @@ Visual management tools for MySQL
 
 Template created! To get started run:
 ```bash
-  cd Selene-mysql
-  pnpm install
-
+cd Selene-mysql
+pnpm install
 ```
 
 For Desktop development, run:
 ```bash
-  pnpm tauri dev
+pnpm tauri dev
 ```
 
 
