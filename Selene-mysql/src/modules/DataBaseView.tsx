@@ -17,8 +17,6 @@ export default function DataBaseView({ dbKey, databases }: { dbKey: string | nul
   const [execResult, setExecResult] = useState<ExecResult | null>(null);
 
   const showRightPanel = usePanelsStore((s) => s.showRightPanel);
-  const setShowRightPanel = usePanelsStore((s) => s.setShowRightPanel);
-  const setShowLeftPanel = usePanelsStore((s) => s.setShowLeftPanel);
 
   const leftPanelRef = usePanelRef();
 
@@ -29,8 +27,8 @@ export default function DataBaseView({ dbKey, databases }: { dbKey: string | nul
           <Panel
             id="left"
             panelRef={leftPanelRef}
-            minSize={10}
-            defaultSize={20}
+            minSize={125}
+            defaultSize={230}
             collapsible
             className="border border-zinc-300 rounded-md overflow-hidden"
           >
