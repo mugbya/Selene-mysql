@@ -9,6 +9,9 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { DatabaseTree, TableTree } from "@/types";
+import { nanoid } from "nanoid";
+import { useConnectionStore } from "@/store/useConnectionStore";
+import { executeSQL } from "@/db/msyql-client";
 
 // import { fetchTablesForDatabase } from "@/db/mysqlConnection";
 import { TreeNode } from "@/components/common/tree-panel/TreeNode";
@@ -36,6 +39,8 @@ function WorkSpaceTreePanel({
   const [dialogTargetDB, setDialogTargetDB] = useState<DatabaseTree | null>(null); // 设置打开的数据库
   const [visibleTables, setVisibleTables] = useState<string[]>([]);
 
+  const { openContentTab, setActiveContentTab } = useConnectionStore();
+
   const [dbTrees, setDBTrees] = useState<DatabaseTree[]>(
     databases.map((name) => ({
       name,
@@ -49,6 +54,23 @@ function WorkSpaceTreePanel({
         db.name === dbName ? { ...db, expanded: !db.expanded } : db
       )
     );
+  };
+
+  const openQueryTab = async (dbName: string) => {
+    if (!dbKey) return;
+    
+    await executeSQL(dbKey, `use \`${dbName}\``);
+    
+    const tabId = nanoid();
+    openContentTab({
+      tabId,
+      title: `查询 - ${dbName}`,
+      tabType: 'query',
+      content: `use \`${dbName}\`;\n\n`,
+      dbKey,
+      databaseName: dbName,
+    });
+    setActiveContentTab(tabId);
   };
 
 
@@ -95,6 +117,7 @@ function WorkSpaceTreePanel({
           <div
             className="flex items-center space-x-2 cursor-pointer hover:text-blue-600"
             onClick={() => toggleDatabaseExpand(db.name)}
+            onDoubleClick={() => openQueryTab(db.name)}
           >
             <DatabaseIcon className="w-5 h-5" />
             <span>{db.name}</span>
