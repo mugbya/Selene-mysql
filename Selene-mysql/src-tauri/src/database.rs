@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{postgres::PgPool, mysql::MySqlPool, sqlite::SqlitePool, Row, Column}; // 添加 Column
+use sqlx::{postgres::PgPool, mysql::MySqlPool, sqlite::SqlitePool, Row, Column, Executor}; // 添加 Column
 use std::collections::HashMap;
 use std::fmt;
 use urlencoding::encode;
@@ -163,7 +163,30 @@ impl DatabaseManager {
     }
 
     async fn execute_mysql_query(&self, pool: &MySqlPool, query: &str) -> Result<QueryResult, DatabaseError> {
-        let rows = sqlx::query(query)
+        let query_trimmed = query.trim();
+        let query_upper = query_trimmed.to_uppercase();
+        
+        println!("[DEBUG] SQL query: '{}', upper: '{}'", query_trimmed, query_upper);
+        
+        if query_upper.starts_with("USE ") || query_upper.starts_with("SET ") || query_upper.starts_with("CREATE ") || query_upper.starts_with("DROP ") || query_upper.starts_with("ALTER ") || query_upper.starts_with("INSERT ") || query_upper.starts_with("UPDATE ") || query_upper.starts_with("DELETE ") {
+            println!("[DEBUG] Using execute() for: {}", query_trimmed);
+            let query_clean = query_trimmed.trim_end_matches(';').trim_end_matches('；');
+            
+            let mut conn = pool.acquire().await.map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+            let result = conn.execute(query_clean)
+                .await
+                .map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+            
+            return Ok(QueryResult {
+                columns: vec![],
+                rows: vec![],
+                rows_affected: Some(result.rows_affected()),
+            });
+        }
+
+        println!("[DEBUG] Using fetch_all() for: {}", query_trimmed);
+        let query_clean = query_trimmed.trim_end_matches(';').trim_end_matches('；');
+        let rows = sqlx::query(query_clean)
             .fetch_all(pool)
             .await
             .map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
