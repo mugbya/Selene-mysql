@@ -30,7 +30,7 @@ export type DatabaseTree = {
   views?: string[];
   functions?: string[];
   events?: string[];
-  // 其他子分类也可以加
+  visibleTables?: string[];
 };
 
 export type TableTree = {

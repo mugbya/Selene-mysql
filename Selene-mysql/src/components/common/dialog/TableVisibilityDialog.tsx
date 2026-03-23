@@ -23,12 +23,11 @@ export function TableVisibilityDialog({
 }: TableVisibilityDialogProps) {
   const [selected, setSelected] = useState<string[]>(visibleTables);
 
-  // ✅ 每次打开时初始化为默认全选
-  // useEffect(() => {
-  //   if (open) {
-  //     setSelected(tables); // 默认全选
-  //   }
-  // }, [open, tables]);
+  useEffect(() => {
+    if (open) {
+      setSelected(visibleTables);
+    }
+  }, [open, visibleTables]);
   
   const toggle = (table: string) => {
     setSelected((prev) =>

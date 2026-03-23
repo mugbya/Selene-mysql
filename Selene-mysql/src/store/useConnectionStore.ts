@@ -46,7 +46,8 @@ type ConnectionState = {
   closeConnectionTab: (id: string) => void;
   setActiveTab: (id: string) => void;
   getActiveTab: () => Connection | null;
-  toggleConnectionButton: () => void; // 切换数据库菜单功能
+  toggleConnectionButton: () => void;
+  updateConnectionDisplayDatabases: (tabId: string, displayDatabases: string[]) => void;
 
   openContentTab: (tab: ContentTab) => void;
   closeContentTab: (id: string) => void;
@@ -168,6 +169,14 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   },
 
   setActiveContentTab: (id) => set({ activeContentId: id }),
+
+  updateConnectionDisplayDatabases: (tabId, displayDatabases) => {
+    const { connectiontabs } = get();
+    const updated = connectiontabs.map((conn) =>
+      conn.tabId === tabId ? { ...conn, displayDatabases } : conn
+    );
+    set({ connectiontabs: updated });
+  },
 
   getActiveContent: () => {
     const { contentTabs, activeContentId } = get();

@@ -30,6 +30,8 @@ pnpm add @monaco-editor/react sql-formatter @tanstack/react-virtual
 
 pnpm add tw-animate-css
 
+pnpm add @tauri-apps/plugin-sql
+
 # 安装 node 类型定义
 pnpm add -D @types/node
 

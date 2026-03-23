@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-// import { Database } from "lucide-react";
-import { Database as DatabaseIcon, Icon, Table, AlarmClock, TerminalSquare, FunctionSquare, Eye} from "lucide-react";
+import { Database as DatabaseIcon, Table, AlarmClock, TerminalSquare, FunctionSquare, Eye} from "lucide-react";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -8,7 +7,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { DatabaseTree, TableTree } from "@/types";
+import { DatabaseTree } from "@/types";
 import { nanoid } from "nanoid";
 import { useConnectionStore } from "@/store/useConnectionStore";
 import { executeSQL } from "@/db/msyql-client";
@@ -21,9 +20,11 @@ import { TableVisibilityDialog } from "@/components/common/dialog/TableVisibilit
 import { fetchTables } from "@/db/msyql-client";
 
 function WorkSpaceTreePanel({
+  tabId,
   dbKey,
   databases,
 }: {
+  tabId: string;
   dbKey: string | null;
   databases: string[];
 }) {
@@ -36,17 +37,23 @@ function WorkSpaceTreePanel({
   console.log("[WorkSpaceTreePanel] databases:", databases);
 
   const [visibleTableDialogOpen, setVisibleTableDialogOpen] = useState(false);
-  const [dialogTargetDB, setDialogTargetDB] = useState<DatabaseTree | null>(null); // 设置打开的数据库
-  const [visibleTables, setVisibleTables] = useState<string[]>([]);
+  const [dialogTargetDB, setDialogTargetDB] = useState<DatabaseTree | null>(null);
 
   const { openContentTab, setActiveContentTab } = useConnectionStore();
 
-  const [dbTrees, setDBTrees] = useState<DatabaseTree[]>(
-    databases.map((name) => ({
-      name,
-      expanded: false,
-    }))
-  );
+  const [dbTrees, setDBTrees] = useState<DatabaseTree[]>(() => {
+    const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
+    return databases.map((name) => {
+      const key = `${connection?.key || tabId}_${name}`;
+      const saved = localStorage.getItem(`visibleTables_${key}`);
+      const visibleTables = saved ? JSON.parse(saved) : [];
+      return {
+        name,
+        expanded: false,
+        visibleTables,
+      };
+    });
+  });
   
   const toggleDatabaseExpand = (dbName: string) => {
     setDBTrees((prev) =>
@@ -102,10 +109,22 @@ function WorkSpaceTreePanel({
       <TableVisibilityDialog
         open={visibleTableDialogOpen}
         onClose={() => setVisibleTableDialogOpen(false)}
-        // tables={db.tables ?? []}
         tables={dialogTargetDB?.tables ?? []}
-        visibleTables={visibleTables}
-        onSave={(selected) => setVisibleTables(selected)}
+        visibleTables={dialogTargetDB?.visibleTables ?? []}
+        onSave={(selected) => {
+          if (dialogTargetDB) {
+            setDBTrees((prev) =>
+              prev.map((db) =>
+                db.name === dialogTargetDB.name ? { ...db, visibleTables: selected } : db
+              )
+            );
+            const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
+            if (connection) {
+              const key = `${connection.key || connection.tabId}_${dialogTargetDB.name}`;
+              localStorage.setItem(`visibleTables_${key}`, JSON.stringify(selected));
+            }
+          }
+        }}
       />
              
 
@@ -160,7 +179,7 @@ function WorkSpaceTreePanel({
                 
                 {db.tables
                   ?.filter((t) =>
-                    visibleTables.length === 0 ? true : visibleTables.includes(t)
+                    !db.visibleTables || db.visibleTables.length === 0 ? true : db.visibleTables.includes(t)
                   )
                   .map((table) => (
                     <li key={table}>

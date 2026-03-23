@@ -21,7 +21,7 @@ export default function MainView({ tabId }: { tabId: string | null }) {
   return (
     <div className="flex flex-1 overflow-hidden">
       {isDataBase ? (
-        <DataBaseView dbKey={dbKey} databases={databases} />
+        <DataBaseView tabId={tabId} dbKey={dbKey} databases={databases} />
       ) : (
         <ConnectionManager />
       )}

@@ -12,7 +12,7 @@ import { EditableResultTable } from "./ExecResultTable";
 import { ExecResult } from "@/types";
 import { ContentTabManager } from "./ContentTabManager";
 
-export default function DataBaseView({ dbKey, databases }: { dbKey: string | null, databases: string[] }) {
+export default function DataBaseView({ tabId, dbKey, databases }: { tabId: string, dbKey: string | null, databases: string[] }) {
 
   const [execResult, setExecResult] = useState<ExecResult | null>(null);
 
@@ -34,6 +34,7 @@ export default function DataBaseView({ dbKey, databases }: { dbKey: string | nul
           >
             <div className="flex flex-col h-full">
               <WorkSpaceTreePanel
+                tabId={tabId}
                 databases = {databases}
                 dbKey = {dbKey}
               />
