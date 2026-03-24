@@ -38,3 +38,5 @@ pnpm add -D @types/node
 # 初始化  tailwindcss 相关配置
 pnpm exec tailwindcss-cli  init -p
 ```
+
+

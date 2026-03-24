@@ -48,6 +48,7 @@ type ConnectionState = {
   getActiveTab: () => Connection | null;
   toggleConnectionButton: () => void;
   updateConnectionDisplayDatabases: (tabId: string, displayDatabases: string[]) => void;
+  updateConnectionDatabases: (tabId: string, databases: string[]) => void;
 
   openContentTab: (tab: ContentTab) => void;
   closeContentTab: (id: string) => void;
@@ -174,6 +175,14 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     const { connectiontabs } = get();
     const updated = connectiontabs.map((conn) =>
       conn.tabId === tabId ? { ...conn, displayDatabases } : conn
+    );
+    set({ connectiontabs: updated });
+  },
+
+  updateConnectionDatabases: (tabId, databases) => {
+    const { connectiontabs } = get();
+    const updated = connectiontabs.map((conn) =>
+      conn.tabId === tabId ? { ...conn, databases } : conn
     );
     set({ connectiontabs: updated });
   },
