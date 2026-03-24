@@ -1,41 +1,68 @@
-# 计划：新建/删除数据库后即时更新 displayDatabases
+# 计划：新建表功能
 
 ## Context
-用户希望在新建或删除数据库后：
-1. 弹窗消失
-2. 数据库列表即时更新
-3. `DBConnectionPersisted.displayDatabases` 增加或移除对应的数据库名
+用户希望在数据库管理界面中实现右键"新建表"功能，能够通过对话框创建新的 MySQL 表。
 
-当前实现：创建数据库后只是调用 `window.location.reload()` 刷新整个页面，体验不佳且没有更新 `displayDatabases`。
+## 关键文件
+- `src/components/common/dialog/CreateTableDialog.tsx` - 新建（需创建）
+- `src/modules/WorkSpaceTreePanel.tsx` - 添加新建表对话框调用和回调
 
 ## 实现方案
 
-### 关键文件
-- `src/modules/WorkSpaceTreePanel.tsx` - 数据库列表展示组件
-- `src/components/common/dialog/CreateDatabaseDialog.tsx` - 创建数据库对话框
-- `src/store/useConnectionStore.ts` - 连接状态管理
-- `src/db/msyql-client.ts` - 已有 `fetchDatabases` 函数
+### 1. 创建 CreateTableDialog 组件
+- 位置：`src/components/common/dialog/CreateTableDialog.tsx`
+- 功能：
+  - 表名输入
+  - 动态添加/删除字段
+  - 每个字段包含：字段名、类型、长度、主键、自增、允许空、默认值、注释
 
-### 实现步骤
+### 2. MySQL 字段类型选项
+常用类型：
+- INT, BIGINT, SMALLINT, TINYINT
+- VARCHAR, CHAR, TEXT, LONGTEXT
+- DATETIME, DATE, TIME, TIMESTAMP
+- DECIMAL, FLOAT, DOUBLE
+- BLOB
 
-#### 1. 修改 WorkSpaceTreePanel 添加数据库刷新方法
-- 在 WorkSpaceTreePanel 中添加 `refreshDatabases` 函数
-- 调用 `fetchDatabases(dbKey)` 获取最新数据库列表
-- 使用 `useConnectionStore` 的 `updateConnectionDisplayDatabases` 更新 `displayDatabases`
-- 更新本地 `dbTrees` 状态
+### 3. 字段行结构
+```
+{
+  name: string,      // 字段名
+  type: string,      // 类型
+  length: string,    // 长度
+  primaryKey: boolean,
+  autoIncrement: boolean,
+  notNull: boolean,
+  default: string,   // 默认值
+  comment: string   // 注释
+}
+```
 
-#### 2. 修改 CreateDatabaseDialog 的 onSuccess 回调
-- 在 WorkSpaceTreePanel 中传递刷新函数给 CreateDatabaseDialog
-- 不再使用 `window.location.reload()`，改为调用刷新函数
+### 4. 实现步骤
 
-#### 3. 实现删除数据库功能
-- 在 WorkSpaceTreePanel 的右键菜单添加"删除数据库"选项
-- 执行 `DROP DATABASE \`${dbName}\``
-- 删除成功后从 `displayDatabases` 移除该数据库
+#### 4.1 创建 CreateTableDialog.tsx
+- 使用 shadcn/ui 的 Dialog, Input, Select 组件
+- 字段列表使用动态数组管理
+- 生成 CREATE TABLE SQL 并执行
+
+#### 4.2 修改 WorkSpaceTreePanel.tsx
+- 添加状态管理 `createTableDialogOpen`, `createTableDbName`
+- 在 handleGroupAction 中处理 "create" 动作
+- 传递 dbKey, dbName 给对话框
+- 创建成功后刷新表列表
+
+### 5. SQL 生成逻辑
+```sql
+CREATE TABLE `${tableName}` (
+  `${fieldName}` ${type}${length}${notNull}${autoIncrement}${default}${comment},
+  ...
+  PRIMARY KEY (...)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
 
 ### 验证方法
-1. 打开一个数据库连接
-2. 点击"+ 新建库"，输入新库名创建
-3. 验证新库立即显示在左侧列表中
-4. 右键一个数据库，选择删除
-5. 验证该库从列表中消失
+1. 右键某个数据库的"表"分类
+2. 选择"新建表"
+3. 输入表名，添加字段
+4. 点击创建
+5. 验证表出现在左侧列表中

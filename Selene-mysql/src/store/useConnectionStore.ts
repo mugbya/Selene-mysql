@@ -18,7 +18,7 @@ export type Connection = {
 export type ContentTab = {
   tabId: string;
   title: string;
-  tabType: 'query' | 'tableView' | 'tableStructure' | 'tableExport'; // 新增类型字段
+  tabType: 'query' | 'tableView' | 'tableStructure' | 'tableExport' | 'createTable'; // 新增类型字段
   content?: string;
   // content: React.ReactNode;
   dbKey?: string;

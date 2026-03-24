@@ -1,6 +1,7 @@
 import { SqlMonacoEditor } from "@/components/common/content-viewer/SqlMonacoEditor";
 import { TableViewTab } from "@/components/common/TableViewTab";
 import { TableExportTab } from "@/components/common/TableExportTab";
+import { CreateTableTab } from "@/components/common/CreateTableTab";
 import { cn } from "@/lib/utils";
 import { useConnectionStore } from "@/store/useConnectionStore";
 import { ExecResultProps } from "@/types";
@@ -90,11 +91,13 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
           if (activeContentTab.tabType === "query") {
               return <SqlMonacoEditor dbKey={dbKey} onExecResult={onExecResult} />
           } else if (activeContentTab.tabType === "tableView") {
-            return <TableViewTab dbkey={dbKey} dbName={activeContentTab.databaseName!} tableName={activeContentTab.tableName!} />;
+            return <TableViewTab dbkey={dbKey} dbName={activeContentTab.databaseName || ""} tableName={activeContentTab.tableName || ""} />;
           } else if (activeContentTab.tabType === "tableStructure") {
-            return <EditableStructureTable dbKey={dbKey} dbName={activeContentTab.databaseName!} tableName={activeContentTab.tableName!} result={activeContentTab.execResult!} />;
+            return <EditableStructureTable dbKey={dbKey} dbName={activeContentTab.databaseName || ""} tableName={activeContentTab.tableName || ""} result={activeContentTab.execResult!} />;
           } else if (activeContentTab.tabType === "tableExport") {
-            return <TableExportTab dbKey={dbKey} dbName={activeContentTab.databaseName!} tableName={activeContentTab.tableName!} />;
+            return <TableExportTab dbKey={dbKey} dbName={activeContentTab.databaseName || ""} tableName={activeContentTab.tableName || ""} />;
+          } else if (activeContentTab.tabType === "createTable") {
+            return <CreateTableTab dbKey={dbKey} dbName={activeContentTab.databaseName || ""} tableName={activeContentTab.tableName} />;
           }
           else {
             return <div>未知类型</div>;

@@ -100,7 +100,7 @@ function WorkSpaceTreePanel({
   };
 
 
-  const loadTables = async (dbName: string) => {
+  const loadTables = useCallback(async (dbName: string) => {
     if (!dbKey) return;
     const tables = await fetchTables(dbKey, dbName); // 你需要实现
     console.log("[WorkSpaceTreePanel] tables:", tables);
@@ -109,13 +109,41 @@ function WorkSpaceTreePanel({
         db.name === dbName ? { ...db, tables } : db
       )
     );
-  };
+  }, [dbKey]);
+
+  // 监听表创建事件，刷新表列表
+  useEffect(() => {
+    const handleTableCreated = (event: CustomEvent<{ dbKey: string; dbName: string }>) => {
+      const { dbKey: eventDbKey, dbName } = event.detail;
+      console.log("[WorkSpaceTreePanel] table-created event:", event.detail);
+      if (dbKey === eventDbKey) {
+        loadTables(dbName);
+      }
+    };
+    window.addEventListener('table-created', handleTableCreated as EventListener);
+
+    return () => {
+      window.removeEventListener('table-created', handleTableCreated as EventListener);
+    };
+  }, [dbKey, loadTables]);
 
   function handleGroupAction(action: string, dbName: string) {
     console.log(`[WorkSpaceTreePanel] 执行 ${action} 操作，数据库：${dbName}`);
     if (action === "export_all") {
       setExportTargetDB(dbName);
       setExportDialogOpen(true);
+    }
+    if (action === "create" && dbKey) {
+      // 打开新建表 tab
+      const newTabId = nanoid();
+      openContentTab({
+        tabId: newTabId,
+        title: `新建表 - ${dbName}`,
+        tabType: "createTable",
+        dbKey: dbKey || undefined,
+        databaseName: dbName,
+      });
+      setActiveContentTab(newTabId);
     }
   }
 
