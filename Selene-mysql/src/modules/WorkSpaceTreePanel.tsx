@@ -11,6 +11,7 @@ import {
 import { DatabaseTree } from "@/types";
 import { nanoid } from "nanoid";
 import { useConnectionStore } from "@/store/useConnectionStore";
+import { useShallow } from "zustand/shallow";
 import { executeSQL, fetchDatabases } from "@/db/msyql-client";
 import { toast } from "sonner";
 
@@ -46,7 +47,18 @@ function WorkSpaceTreePanel({
   const [exportTargetDB, setExportTargetDB] = useState<string>("");
   const [createDbDialogOpen, setCreateDbDialogOpen] = useState(false);
 
-  const { openContentTab, setActiveContentTab } = useConnectionStore();
+  const { openContentTab, setActiveContentTab, contentTabs, activeContentId } = useConnectionStore(
+    useShallow((state) => ({
+      openContentTab: state.openContentTab,
+      setActiveContentTab: state.setActiveContentTab,
+      contentTabs: state.contentTabs,
+      activeContentId: state.activeContentId,
+    }))
+  );
+
+  // 获取当前正在使用的数据库
+  const activeContent = contentTabs.find(t => t.tabId === activeContentId);
+  const currentDatabase = activeContent?.dbKey === dbKey ? activeContent?.databaseName : null;
 
   const [dbTrees, setDBTrees] = useState<DatabaseTree[]>(() => {
     const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
@@ -241,7 +253,11 @@ function WorkSpaceTreePanel({
           <ContextMenu>
             <ContextMenuTrigger>
               <div
-                className="flex items-center space-x-2 cursor-pointer hover:text-blue-600"
+                className={`flex items-center space-x-2 cursor-pointer rounded px-1 py-0.5 ${
+                  db.expanded || currentDatabase === db.name
+                    ? "text-blue-600 font-medium"
+                    : "hover:text-blue-600"
+                }`}
                 onClick={() => toggleDatabaseExpand(db.name)}
                 onDoubleClick={() => openQueryTab(db.name)}
               >
