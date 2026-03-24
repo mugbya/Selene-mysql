@@ -17,6 +17,7 @@ import { TreeNode } from "@/components/common/tree-panel/TreeNode";
 // import { TreeLeaf } from "@/components/common/tree-panel/TreeLeaf";
 import { TableTreeLeaf } from "@/components/common/tree-panel/TableTreeLeaf";
 import { TableVisibilityDialog } from "@/components/common/dialog/TableVisibilityDialog";
+import { ExportWizardDialog } from "@/components/common/dialog/ExportWizardDialog";
 import { fetchTables } from "@/db/msyql-client";
 
 function WorkSpaceTreePanel({
@@ -38,6 +39,8 @@ function WorkSpaceTreePanel({
 
   const [visibleTableDialogOpen, setVisibleTableDialogOpen] = useState(false);
   const [dialogTargetDB, setDialogTargetDB] = useState<DatabaseTree | null>(null);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportTargetDB, setExportTargetDB] = useState<string>("");
 
   const { openContentTab, setActiveContentTab } = useConnectionStore();
 
@@ -94,7 +97,10 @@ function WorkSpaceTreePanel({
 
   function handleGroupAction(action: string, dbName: string) {
     console.log(`[WorkSpaceTreePanel] 执行 ${action} 操作，数据库：${dbName}`);
-    // 在这里添加你的逻辑
+    if (action === "export_all") {
+      setExportTargetDB(dbName);
+      setExportDialogOpen(true);
+    }
   }
   
   function handleAction(action: string, dbName: string) {
@@ -126,7 +132,14 @@ function WorkSpaceTreePanel({
           }
         }}
       />
-             
+
+      <ExportWizardDialog
+        open={exportDialogOpen}
+        onClose={() => setExportDialogOpen(false)}
+        dbKey={dbKey || ""}
+        dbName={exportTargetDB}
+        tables={dbTrees.find(db => db.name === exportTargetDB)?.tables ?? []}
+      />
 
       <div className="w-max">
         <h2 className="font-semibold pl-3 pb-2">数据库列表</h2>

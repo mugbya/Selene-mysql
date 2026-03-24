@@ -1,5 +1,6 @@
 import { SqlMonacoEditor } from "@/components/common/content-viewer/SqlMonacoEditor";
 import { TableViewTab } from "@/components/common/TableViewTab";
+import { TableExportTab } from "@/components/common/TableExportTab";
 import { cn } from "@/lib/utils";
 import { useConnectionStore } from "@/store/useConnectionStore";
 import { ExecResultProps } from "@/types";
@@ -91,7 +92,9 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
           } else if (activeContentTab.tabType === "tableView") {
             return <TableViewTab dbkey={dbKey} dbName={activeContentTab.databaseName!} tableName={activeContentTab.tableName!} />;
           } else if (activeContentTab.tabType === "tableStructure") {
-            return <EditableStructureTable dbName={activeContentTab.databaseName!} tableName={activeContentTab.tableName!} result={activeContentTab.execResult!} />;
+            return <EditableStructureTable dbKey={dbKey} dbName={activeContentTab.databaseName!} tableName={activeContentTab.tableName!} result={activeContentTab.execResult!} />;
+          } else if (activeContentTab.tabType === "tableExport") {
+            return <TableExportTab dbKey={dbKey} dbName={activeContentTab.databaseName!} tableName={activeContentTab.tableName!} />;
           }
           else {
             return <div>未知类型</div>;

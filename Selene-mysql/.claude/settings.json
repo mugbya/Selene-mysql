@@ -1,0 +1,6 @@
+{
+  "plansDirectory": "./plans",
+  "permissions": {
+    "defaultMode": "plan"
+  }
+}

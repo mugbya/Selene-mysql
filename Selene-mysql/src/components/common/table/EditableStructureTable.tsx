@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectTrigger,
@@ -9,6 +10,9 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
+import { Trash2, Plus, Save } from "lucide-react";
+import { executeSQL } from "@/db/msyql-client";
 
 export interface ExecResult {
   columns: string[];
@@ -20,30 +24,39 @@ export interface EditableTableProps {
   result: ExecResult;
   dbName: string;
   tableName: string;
+  dbKey: string;
 }
 
 const sqlDataTypes = [
   "int",
+  "bigint",
+  "smallint",
+  "tinyint",
   "bit",
   "varchar",
+  "char",
   "text",
   "date",
   "datetime",
+  "timestamp",
   "float",
   "double",
-  "boolean",
-  "bigint",
   "decimal",
+  "json",
 ];
 
 export const EditableStructureTable: React.FC<EditableTableProps> = ({
   result,
   dbName,
   tableName,
+  dbKey,
 }) => {
   const [editedRows, setEditedRows] = useState<
     Record<number, Record<string, string>>
   >({});
+  const [deletedRows, setDeletedRows] = useState<Set<number>>(new Set());
+  const [newRows, setNewRows] = useState<Record<string, string>[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const handleChange = (
     rowIndex: number,
@@ -59,87 +72,183 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
     }));
   };
 
-    // const generateAlterSQL = useMemo(() => {
-    // return Object.entries(editedRows).flatMap(([rowIndexStr, edits]) => {
-    //     const rowIndex = parseInt(rowIndexStr);
-    //     const row = result.rows[rowIndex];
-    //     const getVal = (colName: string) => row[result.columns.indexOf(colName)];
+  const handleNewRowChange = (
+    rowIndex: number,
+    columnName: string,
+    value: string
+  ) => {
+    setNewRows((prev) => {
+      const updated = [...prev];
+      updated[rowIndex] = {
+        ...updated[rowIndex],
+        [columnName]: value,
+      };
+      return updated;
+    });
+  };
 
-    //     const columnName = getVal("字段名");
-    //     const originalType = getVal("类型"); // 例："VARCHAR(50)"
-    //     const isNullable = edits["可空"] ?? getVal("可空"); // "YES" | "NO"
-    //     const newDefault = edits["默认值"] ?? getVal("默认值");
+  const handleDeleteRow = (rowIndex: number) => {
+    setDeletedRows((prev) => new Set(prev).add(rowIndex));
+  };
 
-    //     // 获取修改后的类型
-    //     let newType = edits["类型"] ?? originalType;
+  const handleAddNewRow = () => {
+    setNewRows((prev) => [
+      ...prev,
+      { "字段名": "", "类型": "varchar", "长度": "255", "可空": "YES", "默认值": "", "注释": "" },
+    ]);
+  };
 
-    //     // 重构 nullable 和 default 子句
-    //     const nullableSQL = isNullable === "YES" ? "NULL" : "NOT NULL";
+  const handleRemoveNewRow = (rowIndex: number) => {
+    setNewRows((prev) => prev.filter((_, i) => i !== rowIndex));
+  };
 
-    //     const defaultSQL =
-    //     newDefault !== undefined && newDefault !== null && newDefault !== ""
-    //         ? `DEFAULT '${newDefault}'`
-    //         : "";
+  // 生成修改列的 SQL
+  const generateAlterSQL = useMemo(() => {
+    const sqls: string[] = [];
 
-    //     const columnDefParts = [newType, nullableSQL, defaultSQL].filter(Boolean).join(" ");
+    // 处理修改的列
+    Object.entries(editedRows).forEach(([rowIndexStr, edits]) => {
+      const rowIndex = parseInt(rowIndexStr);
+      if (deletedRows.has(rowIndex)) return;
 
-    //     return [`ALTER TABLE \`${dbName}\`.\`${tableName}\` MODIFY COLUMN \`${columnName}\` ${columnDefParts};`];
-    // });
-    // }, [editedRows, result, dbName, tableName]);
+      const row = result.rows[rowIndex];
+      const getVal = (colName: string) => row[result.columns.indexOf(colName)];
 
-const generateAlterSQL = useMemo(() => {
-  return Object.entries(editedRows).map(([rowIndexStr, edits]) => {
-    const rowIndex = parseInt(rowIndexStr);
-    const row = result.rows[rowIndex];
-    const getVal = (colName: string) => row[result.columns.indexOf(colName)];
+      const columnName = getVal("字段名");
+      const type = edits["类型"] ?? getVal("类型");
+      const length = edits["长度"] ?? getVal("长度");
+      const isNullableRaw = edits["可空"] ?? getVal("可空");
+      const defaultVal = edits["默认值"] ?? getVal("默认值");
+      const comment = edits["注释"] ?? getVal("注释");
 
-    const columnName = getVal("字段名");
-    const type = edits["类型"] ?? getVal("类型"); // 如 varchar、int
-    const length = edits["长度"] ?? getVal("长度"); // 如 255
-    // const isNullableRaw = edits["可空"] ?? getVal("可空"); // YES/NO or boolean
+      const isNullable = isNullableRaw === "YES";
+      const nullableSQL = isNullable ? "NULL" : "NOT NULL";
 
-    // const isNullable = isNullableRaw === "YES";
-    // const nullableSQL = isNullable ? "NULL" : "NOT NULL";
+      let defaultSQL = "";
+      if (defaultVal !== undefined && defaultVal !== null && defaultVal !== "") {
+        defaultSQL = `DEFAULT '${defaultVal.replace(/'/g, "''")}'`;
+      }
 
-    let nullableSQL = "";
-    if ("可空" in edits) {
-        const isNullableRaw = edits["可空"];
-        const isNullable = isNullableRaw === "YES";
-        nullableSQL = isNullable ? "NULL" : "NOT NULL";
+      let typeSQL = type.toUpperCase();
+      if (length && (type.toLowerCase().includes("char") || type.toLowerCase().includes("int") || type.toLowerCase().includes("decimal"))) {
+        typeSQL = `${type.toUpperCase()}(${length})`;
+      }
+
+      let sql = `ALTER TABLE \`${tableName}\` MODIFY COLUMN \`${columnName}\` ${typeSQL} ${nullableSQL}`;
+      if (defaultSQL) sql += ` ${defaultSQL}`;
+      sql += ";";
+      sqls.push(sql);
+
+      // 如果有注释，添加注释 SQL
+      if (comment) {
+        sqls.push(`ALTER TABLE \`${tableName}\` MODIFY COLUMN \`${columnName}\` ${typeSQL} ${nullableSQL} ${defaultSQL} COMMENT '${comment.replace(/'/g, "''")}';`);
+      }
+    });
+
+    // 处理删除的列
+    deletedRows.forEach((rowIndex) => {
+      const row = result.rows[rowIndex];
+      const columnName = row[result.columns.indexOf("字段名")];
+      sqls.push(`ALTER TABLE \`${tableName}\` DROP COLUMN \`${columnName}\`;`);
+    });
+
+    // 处理新增的列
+    newRows.forEach((newRow) => {
+      if (!newRow["字段名"]) return;
+
+      const columnName = newRow["字段名"];
+      const type = newRow["类型"] || "varchar";
+      const length = newRow["长度"] || "255";
+      const isNullable = newRow["可空"] === "YES";
+      const defaultVal = newRow["默认值"];
+      const comment = newRow["注释"];
+
+      let typeSQL = type.toUpperCase();
+      if (length && (type.toLowerCase().includes("char") || type.toLowerCase().includes("int") || type.toLowerCase().includes("decimal"))) {
+        typeSQL = `${type.toUpperCase()}(${length})`;
+      }
+
+      let sql = `ALTER TABLE \`${tableName}\` ADD COLUMN \`${columnName}\` ${typeSQL} ${isNullable ? "NULL" : "NOT NULL"}`;
+      if (defaultVal) sql += ` DEFAULT '${defaultVal.replace(/'/g, "''")}'`;
+      sql += ";";
+      sqls.push(sql);
+
+      if (comment) {
+        sqls.push(`ALTER TABLE \`${tableName}\` MODIFY COLUMN \`${columnName}\` ${typeSQL} ${isNullable ? "NULL" : "NOT NULL"} COMMENT '${comment.replace(/'/g, "''")}';`);
+      }
+    });
+
+    return sqls;
+  }, [editedRows, deletedRows, newRows, result, tableName]);
+
+  const handleSave = async () => {
+    if (generateAlterSQL.length === 0) {
+      toast.info("没有需要保存的更改");
+      return;
     }
 
-    const defaultVal = edits["默认值"] ?? getVal("默认值");
-    const defaultSQL = defaultVal != null && defaultVal !== ""
-      ? `DEFAULT '${defaultVal}'`
-      : "";
+    setSaving(true);
+    try {
+      for (const sql of generateAlterSQL) {
+        const result = await executeSQL(dbKey, sql);
+        if (!result.success) {
+          toast.error(`执行失败: ${sql}\n${result.message}`);
+          setSaving(false);
+          return;
+        }
+      }
+      toast.success("表结构保存成功");
+      // 清空修改状态
+      setEditedRows({});
+      setDeletedRows(new Set());
+      setNewRows([]);
+      // TODO: 刷新表结构
+    } catch (error) {
+      toast.error(`保存失败: ${error}`);
+    } finally {
+      setSaving(false);
+    }
+  };
 
-    const typeSQL = length && type.toLowerCase().includes("char")
-      ? `${type}(${length})`
-      : type;
-
-    return `ALTER TABLE \`${dbName}\`.\`${tableName}\` MODIFY COLUMN \`${columnName}\` ${typeSQL} ${nullableSQL} ${defaultSQL};`;
-  });
-}, [editedRows, result, dbName, tableName]);
+  // 过滤显示的列（排除已删除的）
+  const displayRows = result.rows.filter((_, idx) => !deletedRows.has(idx));
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-gray-600">
+          表名: <span className="font-medium">{tableName}</span>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleAddNewRow}>
+            <Plus className="w-4 h-4 mr-1" /> 添加列
+          </Button>
+          <Button size="sm" onClick={handleSave} disabled={saving || generateAlterSQL.length === 0}>
+            <Save className="w-4 h-4 mr-1" />
+            {saving ? "保存中..." : "保存"}
+          </Button>
+        </div>
+      </div>
+
       <Card>
         <CardContent className="overflow-auto">
           <table className="min-w-full table-auto text-sm">
             <colgroup>
-                <col style={{ width: '200px' }} />  {/* 第1列 */}
-                <col style={{ width: '140px' }}/>                             {/* 第2列，不设宽 */}
-                <col style={{ width: '120px' }} />  {/* 第3列 */}
-                <col style={{ width: '60px' }}/>
-                <col style={{ width: '100px' }}/>
-                <col />
+              <col style={{ width: '30px' }} />
+              <col style={{ width: '180px' }} />
+              <col style={{ width: '120px' }} />
+              <col style={{ width: '80px' }} />
+              <col style={{ width: '60px' }} />
+              <col style={{ width: '100px' }} />
+              <col style={{ width: '150px' }} />
             </colgroup>
             <thead>
               <tr className="bg-gray-300">
+                <th className="px-2 py-2 text-center border-b font-medium">操作</th>
                 {result.columns.map((col) => (
                   <th
                     key={col}
-                    className="px-2 py-1 text-left border-b font-medium"
+                    className="px-2 py-2 text-left border-b font-medium"
                   >
                     {col}
                   </th>
@@ -148,25 +257,32 @@ const generateAlterSQL = useMemo(() => {
             </thead>
 
             <tbody>
-              {result.rows.map((row, rowIndex) => (
-                <tr key={rowIndex} className="bg-gray-100 border-b">
+              {displayRows.map((row, rowIndex) => (
+                <tr key={rowIndex} className="bg-gray-50 border-b hover:bg-gray-100">
+                  <td className="px-2 py-1 text-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                      onClick={() => handleDeleteRow(rowIndex)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </td>
                   {row.map((cell, colIndex) => {
                     const column = result.columns[colIndex];
-                    const isEditable = column !== "COLUMN_NAME";
 
                     if (column === "类型") {
+                      const editedValue = editedRows[rowIndex]?.[column] ?? cell;
                       return (
-                        <td
-                          key={`${rowIndex}-${colIndex}`}
-                          className="px-2 py-1"
-                        >
+                        <td key={`${rowIndex}-${colIndex}`} className="px-2 py-1">
                           <Select
-                            defaultValue={cell}
+                            value={editedValue?.toString() || "varchar"}
                             onValueChange={(value) =>
                               handleChange(rowIndex, column, value)
                             }
                           >
-                            <SelectTrigger className="w-[140px] h-8">
+                            <SelectTrigger className="w-[120px] h-8">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -184,14 +300,10 @@ const generateAlterSQL = useMemo(() => {
                     if (column === "可空") {
                       const editedValue = editedRows[rowIndex]?.[column] ?? cell;
                       return (
-                        <td key={`${rowIndex}-${colIndex}`} className="px-2 py-1">
+                        <td key={`${rowIndex}-${colIndex}`} className="px-2 py-1 text-center">
                           <input
                             type="checkbox"
-                            style={{
-                              border: "2px solid red",
-                              width: "18px",
-                              height: "18px",
-                            }}
+                            className="w-4 h-4"
                             checked={editedValue === "YES"}
                             onChange={(e) =>
                               handleChange(
@@ -205,19 +317,91 @@ const generateAlterSQL = useMemo(() => {
                       );
                     }
 
+                    const editedValue = editedRows[rowIndex]?.[column];
+                    const displayValue = editedValue !== undefined ? editedValue : cell;
+
                     return (
                       <td key={`${rowIndex}-${colIndex}`} className="px-2 py-1">
-                        {isEditable ? (
-                          <Input
-                            className="h-8"
-                            defaultValue={cell || ""}
+                        <Input
+                          className="h-8"
+                          value={displayValue?.toString() || ""}
+                          onChange={(e) =>
+                            handleChange(rowIndex, column, e.target.value)
+                          }
+                        />
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+
+              {/* 新增列 */}
+              {newRows.map((newRow, rowIndex) => (
+                <tr key={`new-${rowIndex}`} className="bg-green-50 border-b hover:bg-green-100">
+                  <td className="px-2 py-1 text-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                      onClick={() => handleRemoveNewRow(rowIndex)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </td>
+                  {result.columns.map((column, colIndex) => {
+                    if (column === "类型") {
+                      return (
+                        <td key={`new-${rowIndex}-${colIndex}`} className="px-2 py-1">
+                          <Select
+                            value={newRow[column] || "varchar"}
+                            onValueChange={(value) =>
+                              handleNewRowChange(rowIndex, column, value)
+                            }
+                          >
+                            <SelectTrigger className="w-[120px] h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {sqlDataTypes.map((type) => (
+                                <SelectItem key={type} value={type}>
+                                  {type}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </td>
+                      );
+                    }
+
+                    if (column === "可空") {
+                      return (
+                        <td key={`new-${rowIndex}-${colIndex}`} className="px-2 py-1 text-center">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4"
+                            checked={newRow[column] === "YES"}
                             onChange={(e) =>
-                              handleChange(rowIndex, column, e.target.value)
+                              handleNewRowChange(
+                                rowIndex,
+                                column,
+                                e.target.checked ? "YES" : "NO"
+                              )
                             }
                           />
-                        ) : (
-                          <span>{cell}</span>
-                        )}
+                        </td>
+                      );
+                    }
+
+                    return (
+                      <td key={`new-${rowIndex}-${colIndex}`} className="px-2 py-1">
+                        <Input
+                          className="h-8"
+                          placeholder={column === "字段名" ? "必填" : ""}
+                          value={newRow[column] || ""}
+                          onChange={(e) =>
+                            handleNewRowChange(rowIndex, column, e.target.value)
+                          }
+                        />
                       </td>
                     );
                   })}
@@ -231,8 +415,11 @@ const generateAlterSQL = useMemo(() => {
       {generateAlterSQL.length > 0 && (
         <Alert>
           <AlertDescription>
+            <div className="text-xs font-medium text-gray-700 mb-2">
+              生成的 SQL ({generateAlterSQL.length} 条):
+            </div>
             {generateAlterSQL.map((sql, i) => (
-              <div key={i} className="text-xs font-mono mb-1">
+              <div key={i} className="text-xs font-mono mb-1 text-gray-600">
                 {sql}
               </div>
             ))}

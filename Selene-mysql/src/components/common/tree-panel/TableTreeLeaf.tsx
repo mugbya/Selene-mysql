@@ -148,29 +148,45 @@ export function TableTreeLeaf({
   }
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger>
-        <div className="flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 cursor-pointer">
-          <Table className="w-4 h-4 text-gray-500" />
-          <span>{tableName}</span>
-        </div>
-      </ContextMenuTrigger>
+    <>
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <div className="flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 cursor-pointer">
+            <Table className="w-4 h-4 text-gray-500" />
+            <span>{tableName}</span>
+          </div>
+        </ContextMenuTrigger>
 
-      <ContextMenuContent className="w-48">
-        {/* <ContextMenuLabel>表操作</ContextMenuLabel> */}
-        <ContextMenuItem onClick={() => openTable()}>打开表</ContextMenuItem>
-        <ContextMenuItem onClick={() => modifyTableStructure()}>设计表</ContextMenuItem>
-        {/* <ContextMenuItem onClick={() => handleAction("create")}>新建表</ContextMenuItem> */}
-        {/* <ContextMenuItem onClick={() => openTable("delete")}>删除表</ContextMenuItem> */}
-        {/* <ContextMenuItem onClick={() => openTable("truncate")}>清空表</ContextMenuItem> */}
+        <ContextMenuContent className="w-48">
+          {/* <ContextMenuLabel>表操作</ContextMenuLabel> */}
+          <ContextMenuItem onClick={() => openTable()}>打开表</ContextMenuItem>
+          <ContextMenuItem onClick={() => modifyTableStructure()}>设计表</ContextMenuItem>
+          {/* <ContextMenuItem onClick={() => handleAction("create")}>新建表</ContextMenuItem> */}
+          {/* <ContextMenuItem onClick={() => openTable("delete")}>删除表</ContextMenuItem> */}
+          {/* <ContextMenuItem onClick={() => openTable("truncate")}>清空表</ContextMenuItem> */}
 
-        <ContextMenuSeparator />
-        {/* <ContextMenuItem onClick={() => handleAction("control")}>表显示控制</ContextMenuItem> */}
-        <ContextMenuSeparator />
-        {/* <ContextMenuItem onClick={() => openTable("refresh")}>刷新</ContextMenuItem> */}
+          <ContextMenuSeparator />
+          <ContextMenuItem onClick={() => {
+            if (!dbkey) {
+              toast.error("数据库连接失败");
+              return;
+            }
+            openContentTab({
+              tabId: `export_${dbName}_${tableName}`,
+              title: `导出 ${tableName}`,
+              tabType: "tableExport",
+              databaseName: dbName,
+              tableName: tableName,
+            });
+          }}>导出表结构</ContextMenuItem>
+          <ContextMenuSeparator />
+          {/* <ContextMenuItem onClick={() => handleAction("control")}>表显示控制</ContextMenuItem> */}
+          <ContextMenuSeparator />
+          {/* <ContextMenuItem onClick={() => openTable("refresh")}>刷新</ContextMenuItem> */}
 
-        {/* <ContextMenuItem onClick={() => handleAction("export")}>转储SQL文件</ContextMenuItem> */}
-      </ContextMenuContent>
-    </ContextMenu>
+          {/* <ContextMenuItem onClick={() => handleAction("export")}>转储SQL文件</ContextMenuItem> */}
+        </ContextMenuContent>
+      </ContextMenu>
+    </>
   );
 }

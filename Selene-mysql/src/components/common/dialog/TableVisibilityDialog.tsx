@@ -14,6 +14,11 @@ interface TableVisibilityDialogProps {
   onSave: (selected: string[]) => void;
 }
 
+/**
+ * 表显示控制弹窗
+ * @param param0 
+ * @returns 
+ */
 export function TableVisibilityDialog({
   open,
   onClose,
