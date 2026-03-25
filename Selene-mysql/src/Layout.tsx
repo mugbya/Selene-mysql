@@ -28,7 +28,7 @@ export default function Layout() {
       <Header toggleLeft={toggleLeftPanel} toggleRight={toggleRightPanel} />
 
       {/* 消息提示 */}
-      <Toaster position="top-center" richColors duration={30000} />
+      <Toaster position="top-center" richColors duration={30000} closeButton />
 
       {/* 连接标签页 */}
       <ConnectionTabs />
