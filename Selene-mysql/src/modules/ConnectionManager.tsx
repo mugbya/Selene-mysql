@@ -17,6 +17,8 @@ export default function ConnectionManager() {
   const { connections, removeConnection, addConnection, updateConnection } = useConnectionList();
 
   const openConnectionTab = useConnectionStore((state) => state.openConnectionTab);
+  const connectiontabs = useConnectionStore((state) => state.connectiontabs);
+  const updateConnectionDisplayDatabases = useConnectionStore((state) => state.updateConnectionDisplayDatabases);
 
   // useEffect(() => {
   //   // const saved = localStorage.getItem(STORAGE_KEY);
@@ -55,16 +57,16 @@ export default function ConnectionManager() {
   };
 
   const handleSubmit = (conn: DBConnectionPersisted) => {
-    // const updated = editing
-    //   ? connections.map((c) => (c.id === conn.id ? conn : c))
-    //   : [...connections, { ...conn, id: nanoid() }];
-    // saveToStorage(updated);
     console.log("[ConnectionManager] 提交的连接信息:", conn);
     if (editing) {
-      updateConnection(conn.id, conn); // 直接更新已有连接
+      updateConnection(conn.id, conn);
+      const openConn = connectiontabs.find((c) => c.tabId === conn.id);
+      if (openConn) {
+        updateConnectionDisplayDatabases(conn.id, conn.displayDatabases ?? []);
+      }
     } else {
       const newConn = { ...conn, id: nanoid() };
-      addConnection(newConn); // 添加新连接并持久化
+      addConnection(newConn);
     }
     setDialogOpen(false);
   };
