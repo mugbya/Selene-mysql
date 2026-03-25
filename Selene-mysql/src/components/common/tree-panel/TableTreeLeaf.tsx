@@ -177,7 +177,10 @@ export function TableTreeLeaf({
     <>
       <ContextMenu>
         <ContextMenuTrigger>
-          <div className="flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 cursor-pointer">
+          <div
+            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 cursor-pointer"
+            onDoubleClick={() => openTable()}
+          >
             <Table className="w-4 h-4 text-gray-500" />
             <span>{tableName}</span>
           </div>
