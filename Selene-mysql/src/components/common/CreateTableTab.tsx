@@ -400,7 +400,7 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
             )}
           </Button>
         </div>
-        <pre className="text-xs bg-white p-2 border rounded overflow-x-auto whitespace-pre-wrap">
+        <pre className="font-mono-tight bg-white p-2 border rounded overflow-x-auto whitespace-pre-wrap">
           {generateSQL()}
         </pre>
       </div>

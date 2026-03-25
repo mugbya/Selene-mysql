@@ -109,10 +109,12 @@ export const SqlMonacoEditor: React.FC<ExecResultProps> = ({ dbKey, onExecResult
           onChange={(value) => setCode(value ?? "")}
           theme="vs-light"
           options={{
-            fontSize: 14,
+            fontSize: 13,
+            fontFamily: "'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace",
             minimap: { enabled: false },
             wordWrap: "on",
             scrollBeyondLastLine: false,
+            lineHeight: 20,
           }}
           onMount={handleEditorDidMount}
         />

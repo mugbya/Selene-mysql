@@ -109,7 +109,7 @@ export default function LazyLoadDataTable({
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-sm text-gray-700">
+          <span className="text-xs text-gray-700">
             第 {page + 1} 页 / 共 {maxPage + 1} 页
           </span>
           <Button
@@ -121,7 +121,7 @@ export default function LazyLoadDataTable({
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
-        <div className="text-sm text-gray-500">总共 {totalCount} 条</div>
+        <div className="text-xs text-gray-500">总共 {totalCount} 条</div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={handleAddRow}>
             <Plus className="w-4 h-4 mr-1" /> 添加
@@ -136,15 +136,15 @@ export default function LazyLoadDataTable({
       </div>
 
       {/* 表格内容 */}
-      <div className="overflow-auto flex-1">
+      <div className="overflow-auto flex-1 font-mono-tight">
         <table className="min-w-full table-fixed border-collapse">
           <thead className="bg-gray-100 sticky top-0 z-10">
             <tr>
-              <th className="border px-2 py-2 text-sm font-semibold">✓</th>
+              <th className="border px-1 py-1 text-xs font-semibold">✓</th>
               {columns.map((col, idx) => (
                 <th
                   key={idx}
-                  className="border px-4 py-2 text-left text-sm font-semibold text-gray-700 whitespace-nowrap"
+                  className="border px-2 py-1 text-left text-xs font-semibold text-gray-700 whitespace-nowrap"
                   style={{ minWidth: 120 }}
                 >
                   {col}
@@ -154,8 +154,11 @@ export default function LazyLoadDataTable({
           </thead>
           <tbody>
             {dataRows.map((row, rowIdx) => (
-              <tr key={rowIdx} className="even:bg-gray-50">
-                <td className="border  px-2 text-center">
+              <tr
+                key={rowIdx}
+                className={`even:bg-gray-50 ${selectedRows.has(rowIdx) ? 'bg-blue-100' : ''}`}
+              >
+                <td className="border px-1 text-center">
                   <input
                     type="checkbox"
                     checked={selectedRows.has(rowIdx)}
@@ -169,7 +172,7 @@ export default function LazyLoadDataTable({
                   return (
                     <td
                       key={colIdx}
-                      className="border px-4 py-2 text-sm text-gray-800 whitespace-nowrap"
+                      className="border px-2 py-1 text-xs text-gray-800 whitespace-nowrap"
                       onClick={() =>
                         setEditingCell({ row: rowIdx, col: colIdx })
                       }
@@ -177,7 +180,7 @@ export default function LazyLoadDataTable({
                       {isEditing ? (
                         <input
                           type="text"
-                          className="w-full h-full text-sm outline-none border-none p-0"
+                          className="w-full h-full text-xs outline-none border-none p-0"
                           value={row[colIdx]}
                           onChange={(e) =>
                             handleCellChange(rowIdx, colIdx, e.target.value)
@@ -204,7 +207,7 @@ export default function LazyLoadDataTable({
               <tr>
                 <td
                   colSpan={columns.length + 1}
-                  className="text-center text-sm text-gray-400 py-6"
+                  className="text-center text-xs text-gray-400 py-6"
                 >
                   暂无数据
                 </td>
@@ -214,7 +217,7 @@ export default function LazyLoadDataTable({
               <tr>
                 <td
                   colSpan={columns.length + 1}
-                  className="text-center text-sm text-gray-400 py-6"
+                  className="text-center text-xs text-gray-400 py-6"
                 >
                   加载中...
                 </td>
@@ -226,7 +229,7 @@ export default function LazyLoadDataTable({
 
       {/* SQL 编辑区 */}
       {sqlOutput.length > 0 && (
-        <div className="border-t bg-gray-50 p-2 text-sm">
+        <div className="border-t bg-gray-50 p-2 text-xs">
           <label className="block font-medium text-gray-700 mb-1">
             生成的 SQL：
           </label>

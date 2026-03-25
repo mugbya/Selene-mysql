@@ -118,3 +118,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* 紧凑型等宽字体 */
+.font-mono-tight {
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+}

@@ -75,7 +75,7 @@ export const EditableDataTable: React.FC<EditableDataTableProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col text-sm">
+    <div className="h-full flex flex-col text-xs">
       <div className="flex-1 overflow-auto">
         <table className="table-fixed border-collapse w-full">
           <colgroup>

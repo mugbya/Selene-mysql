@@ -78,7 +78,7 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
 
       {/* Tabs Content */}
       <div className="flex-1 overflow-auto p-2">
-        <div className="flex flex-col flex-1 h-full overflow-auto resize-none font-mono text-sm border rounded p-2 ">
+        <div className="flex flex-col flex-1 h-full overflow-auto resize-none font-mono-tight border rounded p-2 ">
         {(() => {
           if (!activeContentTab) {
             return (

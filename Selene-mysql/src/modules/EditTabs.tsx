@@ -96,7 +96,7 @@ export const EditTabs: React.FC<ExecResultProps> = ({ dbKey, onExecResult }) => 
           //   value={activeEditorTab.content}
           //   onChange={(e) => updateEditorContent(activeTab.tabId, e.target.value)}
           // />
-          <div className="flex flex-col flex-1 h-full overflow-auto resize-none font-mono text-sm border rounded p-2 " >
+          <div className="flex flex-col flex-1 h-full overflow-auto resize-none font-mono-tight border rounded p-2 " >
             <SqlMonacoEditor dbKey={dbKey} onExecResult={onExecResult} />
           </div>
         ) : (

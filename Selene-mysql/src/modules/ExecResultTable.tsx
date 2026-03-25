@@ -74,7 +74,7 @@ export const EditableResultTable: React.FC<EditableResultTableProps> = ({ result
   };
 
   return (
-    <div className="h-full flex flex-col text-sm">
+    <div className="h-full flex flex-col text-xs">
       {/* 顶部操作栏 */}
       <div className="p-2 border-b bg-white flex gap-2 items-center justify-between">
         {/* <div className="flex gap-2">

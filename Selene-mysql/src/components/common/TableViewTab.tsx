@@ -62,7 +62,7 @@ export const TableViewTab = ({
   return (
     <div className="flex flex-col h-full gap-2">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">{tableName}</h2>
+        <h2 className="text-base font-semibold">{tableName}</h2>
         <div className="flex gap-2">
           <Button variant="outline">刷新</Button>
           <Button variant="default">新增数据</Button>
