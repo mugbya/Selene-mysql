@@ -100,7 +100,7 @@ export const SqlMonacoEditor: React.FC<ExecResultProps> = ({ dbKey, onExecResult
 
       <div
         ref={containerRef}
-        style={{ width: "100%", height: "200px", position: "relative" }}
+        style={{ width: "100%", height: "100%", position: "relative" }}
       >
         <Editor
           height="100%"
@@ -118,24 +118,6 @@ export const SqlMonacoEditor: React.FC<ExecResultProps> = ({ dbKey, onExecResult
           }}
           onMount={handleEditorDidMount}
         />
-        <button
-          style={{
-            position: "absolute",
-            right: 16,
-            bottom: 16,
-            zIndex: 10,
-            borderRadius: 4,
-            border: "none",
-            padding: "6px 16px",
-            background: "#2563eb",
-            color: "#fff",
-            fontWeight: 500,
-            cursor: "pointer",
-          }}
-          onClick={handleFormat}
-        >
-          格式化
-        </button>
       </div>
     </div>
   );
