@@ -43,11 +43,52 @@ export default function LazyLoadDataTable({
   const [filters, setFilters] = useState<Record<number, Set<string>>>({});
   const [activeFilterCol, setActiveFilterCol] = useState<number | null>(null);
   const [allDataRows, setAllDataRows] = useState<string[][]>([]);
+  const [expandedCell, setExpandedCell] = useState<{ row: number; col: number } | null>(null);
+  const [columnWidths, setColumnWidths] = useState<Record<number, { default: number; max: number }>>({});
+  const [filterThRef, setFilterThRef] = useState<HTMLTableHeaderCellElement | null>(null);
+
+  // 点击外部关闭筛选弹窗
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (activeFilterCol !== null && filterThRef) {
+        const rect = filterThRef.getBoundingClientRect();
+        const isOutside = 
+          event.clientX < rect.left || 
+          event.clientX > rect.right || 
+          event.clientY < rect.top || 
+          event.clientY > rect.bottom;
+        if (isOutside) {
+          setActiveFilterCol(null);
+        }
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [activeFilterCol, filterThRef]);
 
   // 获取所有数据用于分组统计
   useEffect(() => {
     if (fetchAllData) {
-      fetchAllData().then(data => setAllDataRows(data));
+      fetchAllData().then(data => {
+        setAllDataRows(data);
+        const widths: Record<number, { default: number; max: number }> = {};
+        data.forEach(row => {
+          row.forEach((cell, idx) => {
+            const len = cell ? cell.toString().length : 0;
+            if (!widths[idx]) {
+              widths[idx] = { default: 100, max: 300 };
+            }
+            if (len > widths[idx].default) {
+              widths[idx].default = Math.min(len * 8, 200);
+            }
+            if (len > widths[idx].max) {
+              widths[idx].max = Math.min(len * 8, 600);
+            }
+          });
+        });
+        setColumnWidths(widths);
+      });
     }
   }, [fetchAllData, tableName]);
 
@@ -285,23 +326,28 @@ export default function LazyLoadDataTable({
               {columns.map((col, idx) => {
                 const colValues = getColumnValues(idx);
                 const hasFilter = filters[idx] && filters[idx].size > 0;
+                const isFilterActive = activeFilterCol === idx;
                 return (
                 <th
                   key={idx}
+                  ref={(el) => {
+                    if (isFilterActive) setFilterThRef(el);
+                  }}
                   className="border px-1 py-1 text-left text-xs font-semibold text-gray-700 whitespace-nowrap relative"
-                  style={{ minWidth: 120 }}
+                  style={{ 
+                    minWidth: columnWidths[idx]?.default || 100,
+                    maxWidth: columnWidths[idx]?.max || 300
+                  }}
                 >
-                  <div className="flex items-center gap-1">
-                    <span className="flex-1 truncate">{col}</span>
-                    <button
-                      className={`p-0.5 ${hasFilter ? 'text-green-600' : 'text-gray-300'}`}
-                      onClick={() => {
+                  <div className="flex items-center gap-0.5 overflow-hidden">
+                    <span className="truncate">{col}</span>
+                    <Filter
+                      className={`w-3 h-3 flex-shrink-0 cursor-pointer ${hasFilter ? 'text-green-600 fill-green-600' : 'text-gray-400'}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setActiveFilterCol(activeFilterCol === idx ? null : idx);
                       }}
-                      title="筛选"
-                    >
-                      <Filter className={`w-3 h-3 ${hasFilter ? 'fill-green-600' : ''}`} />
-                    </button>
+                    />
                   </div>
                   {/* 筛选弹窗 */}
                   {activeFilterCol === idx && (
@@ -351,16 +397,30 @@ export default function LazyLoadDataTable({
                   />
                 </td>
                 {row.map((cell, colIdx) => {
-                  const isEditing =
-                    editingCell?.row === rowIdx && editingCell?.col === colIdx;
+                  const isEditing = editingCell?.row === rowIdx && editingCell?.col === colIdx;
+                  const isExpanded = expandedCell?.row === rowIdx && expandedCell?.col === colIdx;
+                  const colWidth = columnWidths[colIdx];
+                  const isOverflowing = colWidth && cell && cell.length * 8 > colWidth.default;
 
                   return (
                     <td
                       key={colIdx}
-                      className="border px-2 py-1 text-xs text-gray-800 whitespace-nowrap"
-                      onClick={() =>
-                        setEditingCell({ row: rowIdx, col: colIdx })
-                      }
+                      className={`border px-2 py-1 text-xs text-gray-800 ${isExpanded ? '' : 'whitespace-nowrap'}`}
+                      style={{
+                        minWidth: colWidth?.default || 100,
+                        maxWidth: colWidth?.max || 300,
+                        overflow: isExpanded ? 'visible' : 'hidden',
+                        textOverflow: isExpanded ? 'clip' : 'ellipsis'
+                      }}
+                      onClick={() => {
+                        if (isExpanded) {
+                          setExpandedCell(null);
+                        } else if (isOverflowing) {
+                          setExpandedCell({ row: rowIdx, col: colIdx });
+                        } else {
+                          setEditingCell({ row: rowIdx, col: colIdx });
+                        }
+                      }}
                     >
                       {isEditing ? (
                         <input
