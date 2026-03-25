@@ -301,49 +301,62 @@ impl DatabaseManager {
 
     fn extract_mysql_value(&self, row: &sqlx::mysql::MySqlRow, index: usize, type_info: &sqlx::mysql::MySqlTypeInfo) -> Result<serde_json::Value, DatabaseError> {
         use sqlx::TypeInfo;
-        let raw_type = type_info.name().to_uppercase(); // 忽略大小写问题
+        let raw_type = type_info.name().to_uppercase();
         let is_unsigned = raw_type.contains("UNSIGNED");
         let cleaned = raw_type.replace("UNSIGNED", "");
         let clean_type = cleaned.trim();
-        // println!("type_info: {:?}, raw type: {}", type_info, type_info.name());
 
+        // 首先尝试 JSON 类型（因为错误提示说列是 JSON）
+        if clean_type.contains("JSON") {
+            let val: Result<Option<String>, _> = row.try_get(index);
+            return match val {
+                Ok(v) => Ok(v.map(serde_json::Value::from).unwrap_or(serde_json::Value::Null)),
+                Err(_) => {
+                    // 如果失败，尝试作为 bytes
+                    let bytes: Result<Option<Vec<u8>>, _> = row.try_get(index);
+                    match bytes {
+                        Ok(opt) => Ok(match opt {
+                            Some(b) => serde_json::Value::String("<json>".to_string()),
+                            None => serde_json::Value::Null,
+                        }),
+                        Err(_) => Ok(serde_json::Value::Null),
+                    }
+                }
+            };
+        }
+
+        // 使用?运算符直接返回错误
         match clean_type {
             "INT" | "BIGINT" | "SMALLINT" | "MEDIUMINT" | "TINYINT" => {
                 if is_unsigned {
-                    row.try_get::<Option<u64>, _>(index)
-                        .map(|val| val.map(|v| v.into()).unwrap_or(serde_json::Value::Null))
+                    let val: Option<u64> = row.try_get(index).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+                    Ok(val.map(|v| v.into()).unwrap_or(serde_json::Value::Null))
                 } else {
-                    row.try_get::<Option<i64>, _>(index)
-                        .map(|val| val.map(|v| v.into()).unwrap_or(serde_json::Value::Null))
+                    let val: Option<i64> = row.try_get(index).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+                    Ok(val.map(|v| v.into()).unwrap_or(serde_json::Value::Null))
                 }
-                .map_err(|e| DatabaseError::QueryFailed(e.to_string()))
             }
             "DECIMAL" | "NEWDECIMAL" => {
-                row.try_get::<Option<f64>, _>(index)
-                    .map(|val| val.map(serde_json::Value::from).unwrap_or(serde_json::Value::Null))
-                    .map_err(|e| DatabaseError::QueryFailed(e.to_string()))
+                let val: Option<f64> = row.try_get(index).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+                Ok(val.map(serde_json::Value::from).unwrap_or(serde_json::Value::Null))
             }
-            "VARCHAR" | "TEXT" | "VARSTRING" | "CHAR" | "TINYTEXT" | "MEDIUMTEXT" | "LONGTEXT" => {
-                row.try_get::<Option<String>, _>(index)
-                    .map(|val| val.map(serde_json::Value::from).unwrap_or(serde_json::Value::Null))
-                    .map_err(|e| DatabaseError::QueryFailed(e.to_string()))
+            "VARCHAR" | "TEXT" | "VARSTRING" | "CHAR" | "TINYTEXT" | "MEDIUMTEXT" | "LONGTEXT" | "JSON" => {
+                let val: Option<String> = row.try_get(index).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+                Ok(val.map(serde_json::Value::from).unwrap_or(serde_json::Value::Null))
             }
             "VARBINARY" | "BLOB" | "TINYBLOB" | "MEDIUMBLOB" | "LONGBLOB" => {
-                // VARBINARY: 尝试当作 UTF-8 字符串
-                row.try_get::<Option<Vec<u8>>, _>(index)
-                    .map(|opt| match opt {
-                        Some(bytes) => match String::from_utf8(bytes) {
-                            Ok(s) => serde_json::Value::String(s),
-                            Err(_) => serde_json::Value::String("<binary>".to_string()),
-                        },
-                        None => serde_json::Value::Null,
-                    })
-                    .map_err(|e| DatabaseError::QueryFailed(e.to_string()))
+                let opt: Option<Vec<u8>> = row.try_get(index).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+                Ok(match opt {
+                    Some(bytes) => match String::from_utf8(bytes) {
+                        Ok(s) => serde_json::Value::String(s),
+                        Err(_) => serde_json::Value::String("<binary>".to_string()),
+                    },
+                    None => serde_json::Value::Null,
+                })
             }
             "BIT" => {
-                row.try_get::<Option<bool>, _>(index)
-                    .map(|val| val.map(serde_json::Value::from).unwrap_or(serde_json::Value::Null))
-                    .map_err(|e| DatabaseError::QueryFailed(e.to_string()))
+                let val: Option<bool> = row.try_get(index).map_err(|e| DatabaseError::QueryFailed(e.to_string()))?;
+                Ok(val.map(serde_json::Value::from).unwrap_or(serde_json::Value::Null))
             }
             "DATETIME" => {
                 row.try_get::<Option<chrono::NaiveDateTime>, _>(index)
@@ -367,22 +380,43 @@ impl DatabaseManager {
                     })
                     .map_err(|e| DatabaseError::QueryFailed(e.to_string()))
             }
-            _ => {
-                // fallback
+            "ENUM" | "SET" | "SERIAL" | "YEAR" | "TIME" => {
+                // 这些类型尝试当作文本处理
                 row.try_get::<Option<String>, _>(index)
                     .map(|val| val.map(serde_json::Value::from).unwrap_or(serde_json::Value::Null))
                     .or_else(|_| {
-                        // 再次 fallback 尝试 bytes
-                        row.try_get::<Option<Vec<u8>>, _>(index)
-                            .map(|opt| match opt {
-                                Some(bytes) => match String::from_utf8(bytes) {
-                                    Ok(s) => serde_json::Value::String(s),
-                                    Err(_) => serde_json::Value::String("<binary>".to_string()),
-                                },
-                                None => serde_json::Value::Null,
-                            })
+                        // 如果失败，返回 Null
+                        Ok(serde_json::Value::Null)
                     })
-                    .map_err(|e| DatabaseError::QueryFailed(e.to_string()))
+            }
+            _ => {
+                // fallback: 尝试多种方式读取
+                // 首先尝试 JSON (因为错误提示说列是 JSON 类型)
+                let json_result: Result<Option<String>, _> = row.try_get(index);
+                match json_result {
+                    Ok(val) => Ok(val.map(serde_json::Value::from).unwrap_or(serde_json::Value::Null)),
+                    Err(_) => {
+                        // 尝试 String
+                        let result: Result<Option<String>, _> = row.try_get(index);
+                        match result {
+                            Ok(val) => Ok(val.map(serde_json::Value::from).unwrap_or(serde_json::Value::Null)),
+                            Err(_) => {
+                                // 尝试 bytes
+                                let bytes_result: Result<Option<Vec<u8>>, _> = row.try_get(index);
+                                match bytes_result {
+                                    Ok(opt) => Ok(match opt {
+                                        Some(bytes) => match String::from_utf8(bytes) {
+                                            Ok(s) => serde_json::Value::String(s),
+                                            Err(_) => serde_json::Value::String("<binary>".to_string()),
+                                        },
+                                        None => serde_json::Value::Null,
+                                    }),
+                                    Err(_) => Ok(serde_json::Value::Null),
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }

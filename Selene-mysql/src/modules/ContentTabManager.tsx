@@ -89,7 +89,7 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
           }
 
           if (activeContentTab.tabType === "query") {
-              return <SqlMonacoEditor dbKey={dbKey} onExecResult={onExecResult} />
+              return <SqlMonacoEditor dbKey={dbKey} onExecResult={onExecResult} initialContent={activeContentTab.content} />
           } else if (activeContentTab.tabType === "tableView") {
             return <TableViewTab dbkey={dbKey} dbName={activeContentTab.databaseName || ""} tableName={activeContentTab.tableName || ""} />;
           } else if (activeContentTab.tabType === "tableStructure") {

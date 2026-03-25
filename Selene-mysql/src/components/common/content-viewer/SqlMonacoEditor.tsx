@@ -8,11 +8,18 @@ import { ExecResult, ExecResultProps } from "@/types";
 import { toast } from "sonner";
 
 // export default function SqlMonacoEditor({dbKey}: { dbKey: string | null }) {
-export const SqlMonacoEditor: React.FC<ExecResultProps> = ({ dbKey, onExecResult }) => {
+export const SqlMonacoEditor: React.FC<ExecResultProps> = ({ dbKey, onExecResult, initialContent }) => {
   // const [code, setCode] = useState("SELECT * FROM users WHERE id = 1;");
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(initialContent || "");
   const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // 当 initialContent 变化时更新 code
+  useEffect(() => {
+    if (initialContent !== undefined) {
+      setCode(initialContent);
+    }
+  }, [initialContent]);
 
   // 监听外层div尺寸变化，自动layout
   useEffect(() => {

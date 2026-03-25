@@ -59,6 +59,7 @@ export interface EditableTableProps {
 export interface ExecResultProps {
   dbKey: string | null;
   onExecResult?: (result: ExecResult) => void;
+  initialContent?: string;
 }
 
 

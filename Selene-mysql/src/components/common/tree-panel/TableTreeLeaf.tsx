@@ -24,21 +24,34 @@ export function TableTreeLeaf({
 
   const openTable = async () => {
     if (!dbkey) {
-      toast.error(`数据库连接失败`, { closeButton: true });
+      console.error("数据库连接失败");
       return;
     }
     console.log(`[打开表] ${dbName}.${tableName}`);
     // 根据 action 执行不同操作
     const text = `SELECT * FROM \`${dbName}\`.${tableName} order by id desc limit 10;`;
     const result = await executeSQL(dbkey, text);
+
     if (!result.success) {
-      toast.error(`查询失败 ${result.message}`, { closeButton: true });
+      // 查询失败，打开查询 tab 显示错误
+      const errorMsg = String(result.message);
+      openContentTab({
+        tabId: `${dbName}.${tableName}`,
+        title: `${tableName}`,
+        tabType: "query",
+        content: `-- 查询失败\n-- ${errorMsg}\n\n${text}`,
+        databaseName: `${dbName}`,
+        tableName: `${tableName}`,
+        isSaved: false,
+      });
       return;
     }
+
     if (!result.data) {
-      toast.error(`查询未返回数据`, { closeButton: true });
+      console.error("查询未返回数据");
       return;
     }
+
     openContentTab({
       tabId: `${dbName}.${tableName}`,
       title: `${tableName}`,
