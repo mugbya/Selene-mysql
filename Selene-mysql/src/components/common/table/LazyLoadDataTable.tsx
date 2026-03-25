@@ -1,10 +1,18 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ExecResult } from "@/types";
-import { ChevronLeft, ChevronRight, Plus, Save, Trash } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Save, Trash, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+// 筛选条件类型
+type FilterCondition = {
+  columnIndex: number;
+  value: string;
+};
 
 interface EditableDataTableProps {
   loadData: (offset: number, limit: number) => Promise<ExecResult>;
+  fetchAllData?: () => Promise<string[][]>;
+  onFilterChange?: (filters: FilterCondition[]) => void;
   totalCount: number;
   dbName: string;
   tableName: string;
@@ -13,6 +21,8 @@ interface EditableDataTableProps {
 
 export default function LazyLoadDataTable({
   loadData,
+  fetchAllData,
+  onFilterChange,
   totalCount,
   dbName,
   tableName,
@@ -29,6 +39,106 @@ export default function LazyLoadDataTable({
     row: number;
     col: number;
   } | null>(null);
+  // 筛选状态：key 为列索引，value 为 Set<选中的值>
+  const [filters, setFilters] = useState<Record<number, Set<string>>>({});
+  const [activeFilterCol, setActiveFilterCol] = useState<number | null>(null);
+  const [allDataRows, setAllDataRows] = useState<string[][]>([]);
+
+  // 获取所有数据用于分组统计
+  useEffect(() => {
+    if (fetchAllData) {
+      fetchAllData().then(data => setAllDataRows(data));
+    }
+  }, [fetchAllData, tableName]);
+
+  // 计算每个列的唯一值及其数量（基于所有数据）
+  const getColumnValues = (colIdx: number) => {
+    const valueCounts = new Map<string, number>();
+    const rowsToCount = allDataRows.length > 0 ? allDataRows : dataRows;
+    rowsToCount.forEach(row => {
+      const value = row[colIdx]?.toString() || "(空)";
+      valueCounts.set(value, (valueCounts.get(value) || 0) + 1);
+    });
+    return Array.from(valueCounts.entries())
+      .sort((a, b) => b[1] - a[1]) // 按数量降序
+      .slice(0, 10); // 只取前10个
+  };
+
+  // 筛选过滤后的数据
+  const filteredRows = dataRows.filter(row =>
+    Object.entries(filters).every(([colIdx, selectedValues]) => {
+      if (selectedValues.size === 0) return true;
+      const cellValue = row[parseInt(colIdx)]?.toString() || "(空)";
+      return selectedValues.has(cellValue);
+    })
+  );
+
+  // 切换某列的筛选值
+  const toggleFilterValue = (colIdx: number, value: string) => {
+    // 先构建新的筛选状态
+    const newFilters: Record<number, Set<string>> = {};
+    // 复制现有的筛选条件
+    Object.keys(filters).forEach(key => {
+      newFilters[parseInt(key)] = new Set(filters[parseInt(key)]);
+    });
+
+    // 获取或创建该列的筛选集合
+    let colSet = newFilters[colIdx] ? new Set(newFilters[colIdx]) : new Set<string>();
+
+    if (colSet.has(value)) {
+      colSet.delete(value);
+      if (colSet.size === 0) {
+        delete newFilters[colIdx];
+      } else {
+        newFilters[colIdx] = colSet;
+      }
+    } else {
+      colSet.add(value);
+      newFilters[colIdx] = colSet;
+    }
+
+    // 更新前端状态
+    setFilters(newFilters);
+
+    // 触发后端重新查询
+    if (onFilterChange) {
+      const filterConditions: FilterCondition[] = [];
+      Object.entries(newFilters).forEach(([colIdx, values]) => {
+        if (values.size > 0) {
+          values.forEach(v => {
+            filterConditions.push({
+              columnIndex: parseInt(colIdx),
+              value: v
+            });
+          });
+        }
+      });
+      onFilterChange(filterConditions);
+    }
+  };
+
+  // 清除某列的筛选
+  const clearFilter = (colIdx: number) => {
+    const newFilters = { ...filters };
+    delete newFilters[colIdx];
+    setFilters(newFilters);
+
+    // 触发后端重新查询
+    if (onFilterChange) {
+      const filterConditions: FilterCondition[] = [];
+      Object.entries(newFilters).forEach(([idx, values]) => {
+        if (values.size > 0) {
+          values.forEach(v => {
+            filterConditions.push({
+              columnIndex: parseInt(idx),
+              value: v
+            });
+          });
+        }
+      });
+      onFilterChange(filterConditions);
+    }
+  };
 
   const offset = page * pageSize;
 
@@ -45,6 +155,31 @@ export default function LazyLoadDataTable({
   useEffect(() => {
     fetchData();
   }, [dbName, tableName, page]);
+
+  // 监听清空筛选事件
+  useEffect(() => {
+    const handleClearFilters = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      setFilters({});
+      // 如果需要重新加载数据
+      if (customEvent.detail?.reload) {
+        fetchData();
+      }
+    };
+    window.addEventListener('clear-table-filters', handleClearFilters);
+    return () => {
+      window.removeEventListener('clear-table-filters', handleClearFilters);
+    };
+  }, []);
+
+  // 当筛选变化时，重新加载数据
+  useEffect(() => {
+    if (onFilterChange) {
+      // 如果有 onFilterChange，说明是通过筛选触发的，需要重置页码并重新加载
+      setPage(0);
+      fetchData();
+    }
+  }, [filters]);
 
   const handleAddRow = () => {
     const emptyRow = new Array(columns.length).fill("");
@@ -121,7 +256,13 @@ export default function LazyLoadDataTable({
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
-        <div className="text-xs text-gray-500">总共 {totalCount} 条</div>
+        <div className="text-xs text-gray-500">
+          {Object.keys(filters).length > 0 ? (
+            <>显示 {filteredRows.length} / {totalCount} 条</>
+          ) : (
+            <>总共 {totalCount} 条</>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={handleAddRow}>
             <Plus className="w-4 h-4 mr-1" /> 添加
@@ -141,19 +282,63 @@ export default function LazyLoadDataTable({
           <thead className="bg-gray-100 sticky top-0 z-10">
             <tr>
               <th className="border px-1 py-1 text-xs font-semibold">✓</th>
-              {columns.map((col, idx) => (
+              {columns.map((col, idx) => {
+                const colValues = getColumnValues(idx);
+                const hasFilter = filters[idx] && filters[idx].size > 0;
+                return (
                 <th
                   key={idx}
-                  className="border px-2 py-1 text-left text-xs font-semibold text-gray-700 whitespace-nowrap"
+                  className="border px-1 py-1 text-left text-xs font-semibold text-gray-700 whitespace-nowrap relative"
                   style={{ minWidth: 120 }}
                 >
-                  {col}
+                  <div className="flex items-center gap-1">
+                    <span className="flex-1 truncate">{col}</span>
+                    <button
+                      className={`p-0.5 ${hasFilter ? 'text-green-600' : 'text-gray-300'}`}
+                      onClick={() => {
+                        setActiveFilterCol(activeFilterCol === idx ? null : idx);
+                      }}
+                      title="筛选"
+                    >
+                      <Filter className={`w-3 h-3 ${hasFilter ? 'fill-green-600' : ''}`} />
+                    </button>
+                  </div>
+                  {/* 筛选弹窗 */}
+                  {activeFilterCol === idx && (
+                    <div className="absolute top-full left-0 z-20 mt-1 bg-white border rounded shadow-lg p-2" style={{ minWidth: 200, maxHeight: 300, overflow: 'auto' }}>
+                      <div className="flex items-center justify-between mb-1 pb-1 border-b">
+                        <span className="text-xs font-medium">{col}</span>
+                        {hasFilter && (
+                          <button
+                            className="text-xs text-blue-600 hover:underline"
+                            onClick={() => clearFilter(idx)}
+                          >
+                            清除
+                          </button>
+                        )}
+                      </div>
+                      <div className="space-y-0.5">
+                        {colValues.map(([value, count]) => (
+                          <label key={value} className="flex items-center gap-1 cursor-pointer hover:bg-gray-50 py-0.5">
+                            <input
+                              type="checkbox"
+                              className="w-3 h-3"
+                              checked={filters[idx]?.has(value) || false}
+                              onChange={() => toggleFilterValue(idx, value)}
+                            />
+                            <span className="text-xs truncate flex-1" title={value}>{value}</span>
+                            <span className="text-xs text-gray-400">({count})</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </th>
-              ))}
+              )})}
             </tr>
           </thead>
           <tbody>
-            {dataRows.map((row, rowIdx) => (
+            {filteredRows.map((row, rowIdx) => (
               <tr
                 key={rowIdx}
                 className={`even:bg-gray-50 ${selectedRows.has(rowIdx) ? 'bg-blue-100' : ''}`}
