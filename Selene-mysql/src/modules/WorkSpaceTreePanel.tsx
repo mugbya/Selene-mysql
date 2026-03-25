@@ -111,7 +111,7 @@ function WorkSpaceTreePanel({
     );
   }, [dbKey]);
 
-  // 监听表创建事件，刷新表列表
+  // 监听表创建/删除事件，刷新表列表
   useEffect(() => {
     const handleTableCreated = (event: CustomEvent<{ dbKey: string; dbName: string }>) => {
       const { dbKey: eventDbKey, dbName } = event.detail;
@@ -120,10 +120,22 @@ function WorkSpaceTreePanel({
         loadTables(dbName);
       }
     };
+
+    const handleTableDropped = (event: CustomEvent<{ dbKey: string; dbName: string }>) => {
+      const { dbKey: eventDbKey, dbName } = event.detail;
+      console.log("[WorkSpaceTreePanel] table-dropped event:", event.detail, "current dbKey:", dbKey);
+      if (dbKey === eventDbKey) {
+        console.log("[WorkSpaceTreePanel] 刷新表列表:", dbName);
+        loadTables(dbName);
+      }
+    };
+
     window.addEventListener('table-created', handleTableCreated as EventListener);
+    window.addEventListener('table-dropped', handleTableDropped as EventListener);
 
     return () => {
       window.removeEventListener('table-created', handleTableCreated as EventListener);
+      window.removeEventListener('table-dropped', handleTableDropped as EventListener);
     };
   }, [dbKey, loadTables]);
 

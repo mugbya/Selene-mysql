@@ -6,7 +6,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { executeSQL } from "@/db/msyql-client";
-import { Table } from "lucide-react";
+import { Table, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useConnectionStore } from "@/store/useConnectionStore";
 import { ColumnSchema } from "@/types";
@@ -49,6 +49,32 @@ export function TableTreeLeaf({
       // queryId: crypto.randomUUID(), // 如果是已有的查询，可保存其 ID
       isSaved: false,
     });
+  };
+
+  const dropTable = async () => {
+    console.log("[dropTable] 开始删除, dbkey:", dbkey, "dbName:", dbName, "tableName:", tableName);
+    if (!dbkey) {
+      toast.error("数据库连接失败");
+      return;
+    }
+
+    // 直接删除，不使用 confirm 对话框
+    console.log("[dropTable] 删除表:", dbName, tableName);
+    try {
+      // 使用完整的数据库.表名
+      const result = await executeSQL(dbkey, `DROP TABLE \`${dbName}\`.\`${tableName}\``);
+      console.log("[dropTable] 删除结果:", result);
+      if (result.success) {
+        toast.success(`表 ${tableName} 删除成功`);
+        // 发送事件通知刷新表列表
+        window.dispatchEvent(new CustomEvent('table-dropped', { detail: { dbKey: dbkey, dbName } }));
+      } else {
+        toast.error("删除失败: " + result.message);
+      }
+    } catch (error) {
+      console.error("[dropTable] 错误:", error);
+      toast.error("删除失败: " + error);
+    }
   };
 
   const modifyTableStructure  = async () => {
@@ -161,8 +187,10 @@ export function TableTreeLeaf({
           {/* <ContextMenuLabel>表操作</ContextMenuLabel> */}
           <ContextMenuItem onClick={() => openTable()}>打开表</ContextMenuItem>
           <ContextMenuItem onClick={() => modifyTableStructure()}>设计表</ContextMenuItem>
-          {/* <ContextMenuItem onClick={() => handleAction("create")}>新建表</ContextMenuItem> */}
-          {/* <ContextMenuItem onClick={() => openTable("delete")}>删除表</ContextMenuItem> */}
+          <ContextMenuSeparator />
+          <ContextMenuItem onClick={() => { console.log("delete clicked"); dropTable(); }}>
+            删除表
+          </ContextMenuItem>
           {/* <ContextMenuItem onClick={() => openTable("truncate")}>清空表</ContextMenuItem> */}
 
           <ContextMenuSeparator />
