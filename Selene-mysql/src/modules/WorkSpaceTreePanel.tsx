@@ -385,15 +385,18 @@ function WorkSpaceTreePanel({
               const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
               const currentDisplayDbs = connection?.displayDatabases || [];
               setFilterDialogOpen(true);
-              if (filterDbList.length === 0 && dbKey) {
+              if (dbKey) {
                 setFilterLoading(true);
                 fetchDatabases(dbKey).then(result => {
-                  setFilterDbList(result || []);
-                  setFilterSelectedDBs(currentDisplayDbs);
+                  const latestDatabases = result || [];
+                  setFilterDbList(latestDatabases);
+                  const newSelectedDbs = currentDisplayDbs.filter(db => latestDatabases.includes(db));
+                  if (latestDatabases.length !== currentDisplayDbs.length) {
+                    useConnectionStore.getState().updateConnectionDisplayDatabases(tabId, newSelectedDbs);
+                  }
+                  setFilterSelectedDBs(newSelectedDbs);
                   setFilterLoading(false);
                 });
-              } else {
-                setFilterSelectedDBs(currentDisplayDbs);
               }
             }}
           />
