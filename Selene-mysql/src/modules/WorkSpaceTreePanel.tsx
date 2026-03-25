@@ -104,12 +104,29 @@ function WorkSpaceTreePanel({
     if (!dbKey) return;
     const tables = await fetchTables(dbKey, dbName); // 你需要实现
     console.log("[WorkSpaceTreePanel] tables:", tables);
+
+    if (!tables) return;
+
     setDBTrees((prev) =>
-      prev.map((db) =>
-        db.name === dbName ? { ...db, tables } : db
-      )
+      prev.map((db) => {
+        if (db.name !== dbName) return db;
+
+        // 获取当前的 visibleTables
+        const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
+        const key = `${connection?.key || tabId}_${dbName}`;
+        const saved = localStorage.getItem(`visibleTables_${key}`);
+        const currentVisibleTables: string[] = saved ? JSON.parse(saved) : [];
+
+        // 更新 visibleTables：删除的表移除，新建的要自动添加
+        const newVisibleTables = [...new Set([...currentVisibleTables.filter(t => tables.includes(t)), ...tables])];
+
+        // 保存到 localStorage
+        localStorage.setItem(`visibleTables_${key}`, JSON.stringify(newVisibleTables));
+
+        return { ...db, tables, visibleTables: newVisibleTables };
+      })
     );
-  }, [dbKey]);
+  }, [dbKey, tabId]);
 
   // 监听表创建/删除事件，刷新表列表
   useEffect(() => {
@@ -363,9 +380,9 @@ function WorkSpaceTreePanel({
                     </li>
                 ))}
               </TreeNode>
-              <TreeNode label="视图" icon={<Eye className="w-4 h-4"/>} />
+              {/* <TreeNode label="视图" icon={<Eye className="w-4 h-4"/>} />
               <TreeNode label="函数" icon={<FunctionSquare className="w-4 h-4"/>} />
-              <TreeNode label="事件" icon={<AlarmClock className="w-4 h-4"/>} />
+              <TreeNode label="事件" icon={<AlarmClock className="w-4 h-4"/>} /> */}
               <TreeNode label="查询" icon={<TerminalSquare className="w-4 h-4"/>} />
             </ul>
           )}

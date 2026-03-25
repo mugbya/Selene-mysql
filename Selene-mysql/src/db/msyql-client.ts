@@ -89,6 +89,12 @@ async function fetchDatabases(connectionKey:string) {
 
 async function fetchTables(connectionKey:string, dbName:string) {
     try {
+        // 先切换到目标数据库
+        await invoke('execute_query', {
+            connectionName: connectionKey,
+            query: `USE \`${dbName}\``
+        });
+
         // const query = `show tables from ${dbName};`;
         const query = `SELECT TABLE_NAME AS name FROM information_schema.tables WHERE table_schema = '${dbName}'`;
         console.log('SQL执行获取tables:', query);
@@ -99,7 +105,7 @@ async function fetchTables(connectionKey:string, dbName:string) {
         console.log('SQL执行成功:', result);
         const tableNames: string[] = result.rows.map(row => row[0]);
         return tableNames;
-    }   
+    }
     catch (error) {
         console.error('SQL执行失败:', error);
         return undefined;

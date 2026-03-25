@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { executeSQL } from "@/db/msyql-client";
 import { fetchTables } from "@/db/msyql-client";
 import { nanoid } from "nanoid";
-import { Trash2, Plus, Play } from "lucide-react";
+import { Trash2, Plus, Play, Copy, Check } from "lucide-react";
 
 interface Column {
   id: string;
@@ -70,6 +70,8 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
     { ...DEFAULT_COLUMN, id: nanoid() },
   ]);
   const [loading, setLoading] = useState(false);
+  const [execResult, setExecResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const addColumn = () => {
     setColumns([...columns, { ...DEFAULT_COLUMN, id: nanoid() }]);
@@ -169,7 +171,7 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
       columnDefs.push(`PRIMARY KEY (${pkFieldNames.join(", ")})`);
     }
 
-    return `CREATE TABLE \`${tableNameInput}\` (
+    return `CREATE TABLE \`${effectiveDbName}\`.\`${tableNameInput}\` (
   ${columnDefs.join(",\n  ")}
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`;
   };
@@ -193,28 +195,36 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
     return true;
   };
 
+  const copySQL = () => {
+    navigator.clipboard.writeText(generateSQL());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handleCreate = async () => {
     if (!validateColumns()) return;
 
     setLoading(true);
+    setExecResult(null);
     try {
-      await executeSQL(dbKey, `USE \`${effectiveDbName}\``);
       const sql = generateSQL();
-      console.log("[CreateTableTab] 执行 SQL:", sql);
+      console.log("[CreateTableTab] 生成的 SQL:", sql);
 
       const result = await executeSQL(dbKey, sql);
+      console.log("[CreateTableTab] 执行结果:", result);
 
       if (result.success) {
-        toast.success(`表 ${tableNameInput} 创建成功`);
+        setExecResult({ success: true, message: `表 ${tableNameInput} 创建成功` });
         // 刷新表列表
         await fetchTables(dbKey, effectiveDbName);
         // 发送事件通知刷新表列表
+        console.log("[CreateTableTab] 发送 table-created 事件, dbKey:", dbKey, "dbName:", effectiveDbName);
         window.dispatchEvent(new CustomEvent('table-created', { detail: { dbKey, dbName: effectiveDbName } }));
       } else {
-        toast.error("创建失败: " + result.message);
+        setExecResult({ success: false, message: String(result.message).replace("Query failed", "执行失败") });
       }
     } catch (error) {
-      toast.error(`创建失败: ${error}`);
+      setExecResult({ success: false, message: String(error).replace("Query failed", "执行失败") });
     } finally {
       setLoading(false);
     }
@@ -243,17 +253,15 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
           <Play className="w-4 h-4 mr-1" />
           {loading ? "创建中..." : "执行创建"}
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            navigator.clipboard.writeText(generateSQL());
-            toast.success("SQL 已复制到剪贴板");
-          }}
-        >
-          复制 SQL
-        </Button>
       </div>
+
+      {/* 执行结果区域 */}
+      {execResult && (
+        <div className={`px-2 py-1 text-sm ${execResult.success ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+          {execResult.success ? "✓ " : "✗ "}
+          {execResult.message}
+        </div>
+      )}
 
       {/* 字段列表 */}
       <div className="flex-1 overflow-auto p-2">
@@ -371,7 +379,27 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
 
       {/* SQL 预览 */}
       <div className="border-t p-2 bg-gray-50">
-        <div className="text-xs font-medium text-gray-600 mb-1">SQL 预览:</div>
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs font-medium text-gray-600">SQL 预览:</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-xs"
+            onClick={copySQL}
+          >
+            {copied ? (
+              <>
+                <Check className="w-3 h-3 mr-1" />
+                已复制
+              </>
+            ) : (
+              <>
+                <Copy className="w-3 h-3 mr-1" />
+                复制
+              </>
+            )}
+          </Button>
+        </div>
         <pre className="text-xs bg-white p-2 border rounded overflow-x-auto whitespace-pre-wrap">
           {generateSQL()}
         </pre>
