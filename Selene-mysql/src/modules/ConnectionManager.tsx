@@ -81,26 +81,35 @@ export default function ConnectionManager() {
     
     console.log("[ConnectionManager] 用户要展示的数据库列表:", conn.displayDatabases);
 
-    if (!displayDatabases || displayDatabases.length === 0) {
-      displayDatabases = null;
-      const result = await fetchDatabases(conn.id)
-      console.log("数据库列表:", result);
-      if (!result) {
-        toast.error("连接失败");
-        return;
-      }
-      databases = result ?? [];
+    const result = await fetchDatabases(conn.id)
+    console.log("数据库列表:", result);
+    if (!result) {
+      toast.error("连接失败");
+      return;
     }
+    const realDatabases = result ?? [];
 
-    const connInfo = {
-      tabId: conn.id, // conn 的唯一ID，也用于 tabId 用作标签切换
-      key: conn.id,
-      name: conn.name,
-      isDataBase: true,
-      databases,
-      displayDatabases,
-    };
-    openConnectionTab(connInfo);
+    if (!displayDatabases || displayDatabases.length === 0) {
+       displayDatabases = null;
+       databases = realDatabases;
+     } else {
+       databases = displayDatabases.filter(db => realDatabases.includes(db));
+       if (databases.length !== displayDatabases.length) {
+         const missingDbs = displayDatabases.filter(db => !realDatabases.includes(db));
+         toast.warning(`以下数据库不存在，已过滤: ${missingDbs.join(', ')}`);
+         displayDatabases = databases;
+       }
+     }
+
+     const connInfo = {
+       tabId: conn.id, // conn 的唯一ID，也用于 tabId 用作标签切换
+       key: conn.id,
+       name: conn.name,
+       isDataBase: true,
+       databases,
+       displayDatabases,
+     };
+     openConnectionTab(connInfo);
   };
 
   return (

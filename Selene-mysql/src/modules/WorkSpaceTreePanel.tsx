@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Database as DatabaseIcon, Table, AlarmClock, TerminalSquare, FunctionSquare, Eye, Trash2, Plus} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Database as DatabaseIcon, Table, AlarmClock, TerminalSquare, FunctionSquare, Eye, Trash2, Plus, Filter} from "lucide-react";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -46,6 +45,11 @@ function WorkSpaceTreePanel({
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportTargetDB, setExportTargetDB] = useState<string>("");
   const [createDbDialogOpen, setCreateDbDialogOpen] = useState(false);
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [filterDbList, setFilterDbList] = useState<string[]>([]);
+  const [filterSelectedDBs, setFilterSelectedDBs] = useState<string[]>([]);
+  const [filterLoading, setFilterLoading] = useState(false);
+  const [filterSearchKeyword, setFilterSearchKeyword] = useState("");
 
   const { openContentTab, setActiveContentTab, contentTabs, activeContentId } = useConnectionStore(
     useShallow((state) => ({
@@ -291,18 +295,112 @@ function WorkSpaceTreePanel({
         }}
       />
 
+      {filterDialogOpen && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded shadow-lg w-[400px] max-h-[500px] flex flex-col">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-bold">筛选数据库</h3>
+              <button onClick={() => setFilterDialogOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            
+            <input
+              type="text"
+              placeholder="搜索数据库..."
+              className="w-full p-2 border rounded mb-3"
+              value={filterSearchKeyword}
+              onChange={(e) => setFilterSearchKeyword(e.target.value)}
+            />
+
+            {filterLoading ? (
+              <div className="text-gray-500">正在加载...</div>
+            ) : (
+              <div className="flex-1 overflow-auto">
+                <div className="mb-3">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={filterSelectedDBs.length === filterDbList.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFilterSelectedDBs(filterDbList);
+                        } else {
+                          setFilterSelectedDBs([]);
+                        }
+                      }}
+                    />
+                    <span>全选 ({filterSelectedDBs.length}/{filterDbList.length})</span>
+                  </label>
+                </div>
+                <div className="space-y-1 max-h-[250px] overflow-auto">
+                  {filterDbList
+                    .filter(name => name.toLowerCase().includes(filterSearchKeyword.toLowerCase()))
+                    .map(name => (
+                      <label key={name} className="flex items-center gap-2 hover:bg-gray-50 py-1">
+                        <input
+                          type="checkbox"
+                          checked={filterSelectedDBs.includes(name)}
+                          onChange={() => {
+                            setFilterSelectedDBs(prev =>
+                              prev.includes(name)
+                                ? prev.filter(n => n !== name)
+                                : [...prev, name]
+                            );
+                          }}
+                        />
+                        <span>{name}</span>
+                      </label>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                className="px-3 py-1 bg-gray-400 text-white rounded"
+                onClick={() => setFilterDialogOpen(false)}
+              >
+                取消
+              </button>
+              <button
+                className="px-3 py-1 bg-blue-500 text-white rounded"
+                onClick={() => {
+                  useConnectionStore.getState().updateConnectionDisplayDatabases(tabId, filterSelectedDBs);
+                  refreshDatabases();
+                  setFilterDialogOpen(false);
+                }}
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="w-full">
         <div className="flex items-center gap-2 px-2 py-1">
-          {/* <DatabaseIcon className="w-4 h-4 text-muted-foreground" /> */}
           <span className="text-sm font-medium flex-1">数据库列表</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
+          <Filter 
+            className="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-700" 
+            onClick={() => {
+              const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
+              const currentDisplayDbs = connection?.displayDatabases || [];
+              setFilterDialogOpen(true);
+              if (filterDbList.length === 0 && dbKey) {
+                setFilterLoading(true);
+                fetchDatabases(dbKey).then(result => {
+                  setFilterDbList(result || []);
+                  setFilterSelectedDBs(currentDisplayDbs);
+                  setFilterLoading(false);
+                });
+              } else {
+                setFilterSelectedDBs(currentDisplayDbs);
+              }
+            }}
+          />
+          <Plus 
+            className="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-700" 
             onClick={() => setCreateDbDialogOpen(true)}
-          >
-            <Plus className="w-3 h-3" />
-          </Button>
+          />
         </div>
         <ul className="px-2 text-sm space-y-1">
         {dbTrees.map((db) => (
