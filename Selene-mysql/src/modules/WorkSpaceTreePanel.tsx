@@ -387,6 +387,19 @@ function WorkSpaceTreePanel({
                 className="px-3 py-1 bg-blue-500 text-white rounded"
                 onClick={() => {
                   useConnectionStore.getState().updateConnectionDisplayDatabases(tabId, filterSelectedDBs);
+
+                  // 同时保存到 localStorage
+                  const connections = useConnectionStore.getState().connectiontabs;
+                  const connection = connections.find(c => c.tabId === tabId);
+                  if (connection) {
+                    const savedConnections = JSON.parse(localStorage.getItem('db-connections') || '[]');
+                    const connIndex = savedConnections.findIndex((c: any) => c.id === connection.key || c.id === connection.tabId);
+                    if (connIndex >= 0) {
+                      savedConnections[connIndex].displayDatabases = filterSelectedDBs;
+                      localStorage.setItem('db-connections', JSON.stringify(savedConnections));
+                    }
+                  }
+
                   refreshDatabases();
                   setFilterDialogOpen(false);
                 }}

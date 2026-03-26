@@ -8,6 +8,12 @@ import ConnectionFormDialog from '@/components/common/dialog/ConnectionFormDialo
 import { connectDatabase, fetchDatabases, disconnectDatabase } from '@/db/msyql-client';
 import { useConnectionList } from '@/hooks/useConnectionList';
 
+const STORAGE_KEY = 'db-connections';
+const loadFromStorage = (): DBConnectionPersisted[] => {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  return raw ? JSON.parse(raw) : [];
+};
+
 // const STORAGE_KEY = 'db-connections';
 
 export default function ConnectionManager() {
@@ -72,9 +78,20 @@ export default function ConnectionManager() {
   };
 
   const handleConnect = async(conn: DBConnectionRuntime) => {
-  
+
     // const tabId = crypto.randomUUID();
     let displayDatabases = conn.displayDatabases ?? null;
+
+    // 连接前先从 localStorage 加载最新的 displayDatabases（确保使用用户保存的过滤设置）
+    const savedConnections = loadFromStorage();
+    console.log("[ConnectionManager] loadFromStorage:", savedConnections);
+    const savedConn = savedConnections.find(c => c.id === conn.id);
+    console.log("[ConnectionManager] savedConn:", savedConn);
+    if (savedConn && savedConn.displayDatabases) {
+      displayDatabases = savedConn.displayDatabases;
+    }
+    console.log("[ConnectionManager] displayDatabases after load:", displayDatabases);
+
     await connectDatabase(conn);
    
     let databases: string[] = [];
