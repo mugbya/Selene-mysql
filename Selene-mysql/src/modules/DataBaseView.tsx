@@ -55,7 +55,7 @@ export default function DataBaseView({ tabId, dbKey, databases }: { tabId: strin
               <ContentTabManager dbKey={dbKey} onExecResult={setExecResult} />
             </Panel>
 
-            {execResult && (
+            {execResult && !execResult.isModify && (
               <>
                 <Separator className="h-1 cursor-row-resize"/>
 

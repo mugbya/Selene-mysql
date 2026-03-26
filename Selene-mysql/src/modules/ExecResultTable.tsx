@@ -77,20 +77,13 @@ export const EditableResultTable: React.FC<EditableResultTableProps> = ({ result
     <div className="h-full flex flex-col text-xs">
       {/* 顶部操作栏 */}
       <div className="p-2 border-b bg-white flex gap-2 items-center justify-between">
-        {/* <div className="flex gap-2">
-          <button
-            onClick={handleSaveEdit}
-            className="flex items-center gap-1 text-blue-600 hover:underline text-sm"
-          >
-            <Save className="w-4 h-4" /> 保存
-          </button>
-          <button
-            onClick={handleDeleteSelected}
-            className="flex items-center gap-1 text-red-600 hover:underline text-sm"
-          >
-            <MinusCircle className="w-4 h-4" /> 删除选中
-          </button>
-        </div> */}
+        {result.success === false ? (
+          <span className="text-red-600 font-medium">执行失败</span>
+        ) : result.isModify === true ? (
+          <span className="text-green-600 font-medium">执行成功（影响 {result.rows_affected} 行）</span>
+        ) : (
+          <span className="text-green-600 font-medium">执行成功</span>
+        )}
 
         {onClose && (
           <button
@@ -103,8 +96,21 @@ export const EditableResultTable: React.FC<EditableResultTableProps> = ({ result
         )}
       </div>
 
-      <div className="flex-1 overflow-auto">
-        <table className="table-fixed border-collapse w-full">
+      {result.error ? (
+        <div className="flex-1 overflow-auto p-4 bg-red-50">
+          <div className="text-red-600 whitespace-pre-wrap">{result.error}</div>
+        </div>
+      ) : result.isModify === true ? (
+        <div className="flex-1 overflow-auto p-4 bg-green-50 flex items-center justify-center">
+          <div className="text-green-600 text-lg">操作执行成功</div>
+        </div>
+      ) : result.columns.length === 0 ? (
+        <div className="flex-1 overflow-auto p-4 bg-gray-50">
+          <div className="text-gray-500">查询未返回数据</div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-auto">
+          <table className="table-fixed border-collapse w-full">
           <colgroup>
             <col className="w-8" />
             {result.columns.map((col) => (
@@ -185,10 +191,13 @@ export const EditableResultTable: React.FC<EditableResultTableProps> = ({ result
           </tbody>
         </table>
       </div>
+      )}
 
+      {result.isModify !== true && (
       <div className="border-t p-2 bg-white flex justify-between items-center text-xs">
         <span>共 {result.rows.length} 条记录，已选中 {selectedRows.length} 条</span>
       </div>
+      )}
     </div>
   );
 };

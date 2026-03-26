@@ -11,6 +11,7 @@ export type Connection = {
   isDataBase: boolean;
   databases?: string[]; // 当前连接的所有数据库
   displayDatabases?: string[] | null; // 用户自定义要展示的数据库
+  currentDb?: string; // 当前激活的数据库
   dbConn?: Database | null
 };
 
@@ -49,6 +50,7 @@ type ConnectionState = {
   toggleConnectionButton: () => void;
   updateConnectionDisplayDatabases: (tabId: string, displayDatabases: string[]) => void;
   updateConnectionDatabases: (tabId: string, databases: string[]) => void;
+  updateCurrentDb: (tabId: string, currentDb: string) => void;
 
   openContentTab: (tab: ContentTab) => void;
   closeContentTab: (id: string) => void;
@@ -183,6 +185,14 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     const { connectiontabs } = get();
     const updated = connectiontabs.map((conn) =>
       conn.tabId === tabId ? { ...conn, databases } : conn
+    );
+    set({ connectiontabs: updated });
+  },
+
+  updateCurrentDb: (tabId, currentDb) => {
+    const { connectiontabs } = get();
+    const updated = connectiontabs.map((conn) =>
+      conn.tabId === tabId ? { ...conn, currentDb } : conn
     );
     set({ connectiontabs: updated });
   },

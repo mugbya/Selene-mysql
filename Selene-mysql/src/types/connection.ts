@@ -49,6 +49,9 @@ export type ExecResult = {
   rows: string[][]
   rows_affected: number;
   hasMore?: boolean;
+  error?: string;
+  success?: boolean;
+  isModify?: boolean;
 };
 
 export interface EditableTableProps {

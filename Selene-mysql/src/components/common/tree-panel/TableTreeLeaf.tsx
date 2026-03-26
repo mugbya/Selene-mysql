@@ -75,15 +75,17 @@ export function TableTreeLeaf({
     console.log("[dropTable] 删除表:", dbName, tableName);
     try {
       // 使用完整的数据库.表名
+      // 发送事件通知刷新表列表
+      window.dispatchEvent(new CustomEvent('table-dropped', { detail: { dbKey: dbkey, dbName, tableName } }));
       const result = await executeSQL(dbkey, `DROP TABLE \`${dbName}\`.\`${tableName}\``);
       console.log("[dropTable] 删除结果:", result);
       if (result.success) {
         toast.success(`表 ${tableName} 删除成功`);
-        // 发送事件通知刷新表列表
-        window.dispatchEvent(new CustomEvent('table-dropped', { detail: { dbKey: dbkey, dbName } }));
       } else {
         toast.error("删除失败: " + result.message);
       }
+      // 发送事件通知刷新表列表（无论成功失败都发送，让前端更新状态）
+      window.dispatchEvent(new CustomEvent('table-dropped', { detail: { dbKey: dbkey, dbName, tableName } }));
     } catch (error) {
       console.error("[dropTable] 错误:", error);
       toast.error("删除失败: " + error);

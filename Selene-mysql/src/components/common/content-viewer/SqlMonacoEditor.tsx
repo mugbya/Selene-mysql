@@ -4,8 +4,8 @@ import { format } from "sql-formatter";
 import { editor as MonacoEditor } from "monaco-editor";
 import SqlToolbar from "../toolbar/SqlToolbar";
 import { executeSQL } from "@/db/msyql-client";
+import { useConnectionStore } from "@/store/useConnectionStore";
 import { ExecResult, ExecResultProps } from "@/types";
-import { toast } from "sonner";
 
 // export default function SqlMonacoEditor({dbKey}: { dbKey: string | null }) {
 export const SqlMonacoEditor: React.FC<ExecResultProps> = ({ dbKey, onExecResult, initialContent }) => {
@@ -13,6 +13,17 @@ export const SqlMonacoEditor: React.FC<ExecResultProps> = ({ dbKey, onExecResult
   const [code, setCode] = useState(initialContent || "");
   const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // 从 store 获取内容标签和连接标签
+  const contentTabs = useConnectionStore((state) => state.contentTabs);
+  const activeContentId = useConnectionStore((state) => state.activeContentId);
+  const connectiontabs = useConnectionStore((state) => state.connectiontabs);
+
+  // 获取当前活动的内容标签
+  const activeContent = contentTabs.find(t => t.tabId === activeContentId);
+
+  // 获取当前连接（通过 dbKey 匹配）
+  const currentConnection = connectiontabs.find(c => c.key === dbKey || c.tabId === dbKey);
 
   // 当 initialContent 变化时更新 code
   useEffect(() => {
@@ -74,22 +85,85 @@ export const SqlMonacoEditor: React.FC<ExecResultProps> = ({ dbKey, onExecResult
   const handleRun = async() => {
     if (!dbKey) return;
     const text = getSelectedOrAllText();
-    console.log("[执行 SQL]:", text);
-    const result = await executeSQL(dbKey, text);
+
+    // 优先使用内容标签的 databaseName，否则使用连接的 currentDb
+    const currentDb = activeContent?.databaseName || currentConnection?.currentDb;
+
+    // 检查是否需要添加 USE 语句
+    const trimmedText = text.trim().toUpperCase();
+    const needsUseDb = currentDb && !trimmedText.startsWith('USE ');
+    let finalText = text;
+    if (needsUseDb) {
+      finalText = `USE \`${currentDb}\`;\n${text}`;
+      console.log("[执行 SQL] 添加 USE 语句:", finalText);
+    }
+
+    const isModifyQuery = trimmedText.startsWith('DROP') ||
+                         trimmedText.startsWith('DELETE') ||
+                         trimmedText.startsWith('UPDATE') ||
+                         trimmedText.startsWith('INSERT') ||
+                         trimmedText.startsWith('CREATE') ||
+                         trimmedText.startsWith('ALTER') ||
+                         trimmedText.startsWith('TRUNCATE');
+
+    const result = await executeSQL(dbKey, finalText);
     if (!result.success) {
-        toast.error(`查询失败 ${result.message}`, { closeButton: true });
+        const errorResult: ExecResult = {
+          columns: [],
+          rows: [],
+          rows_affected: 0,
+          error: result.message,
+          success: false
+        };
+        onExecResult?.(errorResult);
         return;
     }
+
     if (!result.data) {
-      toast.error(`查询未返回数据`, { closeButton: true });
+      if (isModifyQuery) {
+        onExecResult?.({
+          columns: [],
+          rows: [],
+          rows_affected: 0,
+          success: true,
+          isModify: true
+        });
+        return;
+      }
+      
+      const errorResult: ExecResult = {
+        columns: [],
+        rows: [],
+        rows_affected: 0,
+        error: "查询未返回数据",
+        success: false
+      };
+      onExecResult?.(errorResult);
         return;
     }
+    
+    if (isModifyQuery) {
+      onExecResult?.({
+        ...result.data,
+        success: true,
+        isModify: true
+      });
+
+      // 如果是 DROP TABLE，触发事件刷新表列表
+      if (trimmedText.startsWith('DROP')) {
+        const tableName = text.trim().replace(/^DROP\s+TABLE\s+/i, '').replace(/^DROP\s+TABLE\s+IF\s+EXISTS\s+/i, '').replace(/[`;]/g, '').trim();
+        const event = new CustomEvent('table-dropped', {
+          detail: { dbKey, dbName: currentDb, tableName }
+        });
+        window.dispatchEvent(event);
+      }
+      return;
+    }
+    
     const data:ExecResult = result.data;
     const { columns, rows, rows_affected  } = data;
     console.log("[执行 SQL] 结果:", columns, rows, rows_affected);
-    // toast.success(`查询成功`, { closeButton: true });
-    onExecResult?.(data); // ✅ 返回结果给父组件
-    // toast.success(`查询成功 ${columns.length} 列 ${rows.length} 行`, { closeButton: true });
+    onExecResult?.({ ...data, success: true });
   };
 
   return (

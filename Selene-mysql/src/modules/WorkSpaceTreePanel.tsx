@@ -91,16 +91,18 @@ function WorkSpaceTreePanel({
     
     await executeSQL(dbKey, `use \`${dbName}\``);
     
-    const tabId = nanoid();
+    const newTabId = nanoid();
+    useConnectionStore.getState().updateCurrentDb(dbKey, dbName);
+    
     openContentTab({
-      tabId,
+      tabId: newTabId,
       title: `查询 - ${dbName}`,
       tabType: 'query',
       content: `use \`${dbName}\`;\n\n`,
       dbKey,
       databaseName: dbName,
     });
-    setActiveContentTab(tabId);
+    setActiveContentTab(newTabId);
   };
 
 
@@ -132,6 +134,23 @@ function WorkSpaceTreePanel({
     );
   }, [dbKey, tabId]);
 
+  const removeTable = useCallback((dbName: string, tableName: string) => {
+    setDBTrees((prev) =>
+      prev.map((db) => {
+        if (db.name !== dbName) return db;
+        
+        const tables = db.tables?.filter(t => t !== tableName) || [];
+        const visibleTables = db.visibleTables?.filter(t => t !== tableName) || [];
+        
+        const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
+        const key = `${connection?.key || tabId}_${dbName}`;
+        localStorage.setItem(`visibleTables_${key}`, JSON.stringify(visibleTables));
+        
+        return { ...db, tables, visibleTables };
+      })
+    );
+  }, [tabId]);
+
   // 监听表创建/删除事件，刷新表列表
   useEffect(() => {
     const handleTableCreated = (event: CustomEvent<{ dbKey: string; dbName: string }>) => {
@@ -142,12 +161,12 @@ function WorkSpaceTreePanel({
       }
     };
 
-    const handleTableDropped = (event: CustomEvent<{ dbKey: string; dbName: string }>) => {
-      const { dbKey: eventDbKey, dbName } = event.detail;
+    const handleTableDropped = (event: CustomEvent<{ dbKey: string; dbName: string; tableName: string }>) => {
+      const { dbKey: eventDbKey, dbName, tableName } = event.detail;
       console.log("[WorkSpaceTreePanel] table-dropped event:", event.detail, "current dbKey:", dbKey);
       if (dbKey === eventDbKey) {
-        console.log("[WorkSpaceTreePanel] 刷新表列表:", dbName);
-        loadTables(dbName);
+        console.log("[WorkSpaceTreePanel] 删除表:", dbName, tableName);
+        removeTable(dbName, tableName);
       }
     };
 
@@ -158,7 +177,7 @@ function WorkSpaceTreePanel({
       window.removeEventListener('table-created', handleTableCreated as EventListener);
       window.removeEventListener('table-dropped', handleTableDropped as EventListener);
     };
-  }, [dbKey, loadTables]);
+  }, [dbKey, loadTables, removeTable]);
 
   function handleGroupAction(action: string, dbName: string) {
     console.log(`[WorkSpaceTreePanel] 执行 ${action} 操作，数据库：${dbName}`);
@@ -239,6 +258,9 @@ function WorkSpaceTreePanel({
     console.log(`[WorkSpaceTreePanel] 执行 ${action} 操作，数据库：${dbName}`);
     if (action === "delete") {
       deleteDatabase(dbName);
+    }
+    if (action === "refresh" && dbKey) {
+      loadTables(dbName);
     }
   }
 
@@ -467,6 +489,10 @@ function WorkSpaceTreePanel({
                   </ContextMenu>
                 }
                 onExpand={() => {
+                  // 展开时设置当前数据库
+                  if (dbKey) {
+                    useConnectionStore.getState().updateCurrentDb(dbKey, db.name);
+                  }
                   if (!db.tables) loadTables(db.name);
                 }}
               >

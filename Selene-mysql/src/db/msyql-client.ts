@@ -13,7 +13,7 @@ async function executeSQL(connectionKey: string, sqlQuery: string) {
         return { success: true, data: result };
     } catch (error) {
         console.error('SQL执行失败:', sqlQuery, error);
-        return { success: false, message: error };
+        return { success: false, message: String(error) };
     }
 }
 

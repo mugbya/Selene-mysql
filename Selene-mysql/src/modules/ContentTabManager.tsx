@@ -24,9 +24,13 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
     setActiveContentTab,
     getActiveContent,
     getActiveTab,
+    connectiontabs,
+    updateCurrentDb,
   } = useConnectionStore();
 
-  //   const activeTab = getActiveTab();
+  // if (!activeContentTab) return null;
+  const activeTab = getActiveTab();
+  const currentDbName = activeTab?.currentDb || "";
   const activeContentTab = getActiveContent();
 
   // if (!activeContentTab) return null;
@@ -62,13 +66,14 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
           className="px-2 py-1 text-sm rounded hover:bg-gray-200 text-gray-600"
           onClick={() => {
             const id = nanoid();
+            const content = currentDbName ? `use \`${currentDbName}\`;\n\n` : "";
             openContentTab({
               tabId: id,
               title: "新建查询",
-              content: "",
+              content,
               isSaved: false,
               tabType: "query",
-              //   dbKey
+              databaseName: currentDbName || undefined,
             });
           }}
         >
