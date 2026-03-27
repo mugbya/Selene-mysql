@@ -102,7 +102,7 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
           } else if (activeContentTab.tabType === "tableExport") {
             return <TableExportTab dbKey={dbKey} dbName={activeContentTab.databaseName || ""} tableName={activeContentTab.tableName || ""} />;
           } else if (activeContentTab.tabType === "createTable") {
-            return <CreateTableTab dbKey={dbKey} dbName={activeContentTab.databaseName || ""} tableName={activeContentTab.tableName} />;
+            return <CreateTableTab dbKey={dbKey} dbName={activeContentTab.databaseName || ""} tableName={activeContentTab.tableName || ""} />;
           }
           else {
             return <div>未知类型</div>;
