@@ -22,9 +22,11 @@ pnpm tauri dev
 
 安装前端依赖
 ```bash
-pnpm add react-resizable-panels sonner zustand lucide-react radix-ui class-variance-authority clsx tailwind-variants react-icons
+pnpm add react-resizable-panels sonner zustand lucide-react radix-ui class-variance-authority clsx tailwind-variants react-icons nanoid
 
 pnpm add -D tailwindcss postcss autoprefixer tailwindcss-cli @tailwindcss/vite @tailwindcss/postcss tailwind-merge clsx
+
+pnpm add @radix-ui/react-dialog @radix-ui/react-tooltip @radix-ui/react-context-menu @radix-ui/react-slot @radix-ui/react-select
 
 pnpm add @monaco-editor/react sql-formatter @tanstack/react-virtual
 
