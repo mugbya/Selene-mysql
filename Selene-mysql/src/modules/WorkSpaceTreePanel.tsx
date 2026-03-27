@@ -562,6 +562,11 @@ function WorkSpaceTreePanel({
                       <div className="flex items-center gap-1">
                         <Table className="w-4 h-4" />
                         <span>表</span>
+                        {db.tables && db.tables.length > 0 && (
+                          <span className="text-xs text-gray-400">
+                            ({db.visibleTables?.length || 0}/{db.tables.length})
+                          </span>
+                        )}
                       </div>
                     </ContextMenuTrigger>
                     <ContextMenuContent className="w-48">
