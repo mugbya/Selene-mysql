@@ -77,3 +77,13 @@ export interface ColumnSchema {
   nullable: boolean;
   default?: string;
 }
+
+export interface SavedQuery {
+  id: string;
+  name: string;
+  content: string;
+  dbKey: string;
+  databaseName?: string;
+  createdAt: number;
+  updatedAt: number;
+}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Database as DatabaseIcon, Table, AlarmClock, TerminalSquare, FunctionSquare, Eye, Trash2, Plus, Filter} from "lucide-react";
+import { Database as DatabaseIcon, Table, AlarmClock, TerminalSquare, FunctionSquare, Eye, Trash2, Plus, Filter, FileText, Edit, Save, RefreshCw} from "lucide-react";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -22,6 +22,9 @@ import { TableVisibilityDialog } from "@/components/common/dialog/TableVisibilit
 import { ExportWizardDialog } from "@/components/common/dialog/ExportWizardDialog";
 import { CreateDatabaseDialog } from "@/components/common/dialog/CreateDatabaseDialog";
 import { fetchTables } from "@/db/msyql-client";
+import { useSavedQueries } from "@/hooks/useSavedQueries";
+import { SaveQueryDialog } from "@/components/common/dialog/SaveQueryDialog";
+import { Input } from "@/components/ui/input";
 
 function WorkSpaceTreePanel({
   tabId,
@@ -50,6 +53,14 @@ function WorkSpaceTreePanel({
   const [filterSelectedDBs, setFilterSelectedDBs] = useState<string[]>([]);
   const [filterLoading, setFilterLoading] = useState(false);
   const [filterSearchKeyword, setFilterSearchKeyword] = useState("");
+
+  // 保存的查询相关状态
+  const [queriesExpanded, setQueriesExpanded] = useState(false);
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [renameTargetQuery, setRenameTargetQuery] = useState<{ id: string; name: string } | null>(null);
+  const [renameInput, setRenameInput] = useState("");
+
+  const { savedQueries, deleteSavedQuery, updateSavedQuery, refreshQueries } = useSavedQueries(dbKey ?? undefined);
 
   const { openContentTab, setActiveContentTab, contentTabs, activeContentId } = useConnectionStore(
     useShallow((state) => ({
@@ -105,6 +116,45 @@ function WorkSpaceTreePanel({
     setActiveContentTab(newTabId);
   };
 
+  // 打开保存的查询
+  const openSavedQuery = (savedQuery: { id: string; name: string; content: string; databaseName?: string }) => {
+    if (!dbKey) return;
+
+    const newTabId = nanoid();
+    openContentTab({
+      tabId: newTabId,
+      title: savedQuery.name,
+      tabType: 'query',
+      content: savedQuery.content,
+      dbKey,
+      databaseName: savedQuery.databaseName,
+      savedQueryId: savedQuery.id,
+      isSaved: true,
+    });
+    setActiveContentTab(newTabId);
+  };
+
+  // 处理重命名
+  const handleRename = (queryId: string, currentName: string) => {
+    setRenameTargetQuery({ id: queryId, name: currentName });
+    setRenameInput(currentName);
+    setRenameDialogOpen(true);
+  };
+
+  const confirmRename = () => {
+    if (renameTargetQuery && renameInput.trim()) {
+      updateSavedQuery(renameTargetQuery.id, { name: renameInput.trim() });
+      toast.success("查询已重命名");
+      setRenameDialogOpen(false);
+      setRenameTargetQuery(null);
+    }
+  };
+
+  // 处理删除
+  const handleDeleteQuery = (queryId: string) => {
+    deleteSavedQuery(queryId);
+    toast.success("查询已删除");
+  };
 
   const loadTables = useCallback(async (dbName: string) => {
     if (!dbKey) return;
@@ -523,13 +573,108 @@ function WorkSpaceTreePanel({
               {/* <TreeNode label="视图" icon={<Eye className="w-4 h-4"/>} />
               <TreeNode label="函数" icon={<FunctionSquare className="w-4 h-4"/>} />
               <TreeNode label="事件" icon={<AlarmClock className="w-4 h-4"/>} /> */}
-              <TreeNode label="查询" icon={<TerminalSquare className="w-4 h-4"/>} />
+
+              {/* 保存的查询列表 */}
+              <TreeNode
+                label={
+                  <div
+                    className="flex items-center gap-1 cursor-pointer w-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setQueriesExpanded(!queriesExpanded);
+                    }}
+                  >
+                    <TerminalSquare className="w-4 h-4" />
+                    <span className="flex-1">查询</span>
+                    <span className="text-xs text-gray-400">({savedQueries.length})</span>
+                    {/* <RefreshCw
+                      className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        refreshQueries();
+                      }}
+                      title="刷新查询列表"
+                    /> */}
+                  </div>
+                }
+                defaultExpanded={queriesExpanded}
+              >
+                {savedQueries.length === 0 ? (
+                  <li className="text-gray-400 text-xs ml-4">暂无保存的查询</li>
+                ) : (
+                  savedQueries.map((query) => (
+                    <li key={query.id}>
+                      <ContextMenu>
+                        <ContextMenuTrigger>
+                          <div
+                            className="flex items-center gap-1 cursor-pointer hover:text-blue-600 py-0.5"
+                            onClick={() => openSavedQuery(query)}
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span className="truncate">{query.name}</span>
+                          </div>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent className="w-48">
+                          <ContextMenuItem
+                            onClick={() => handleRename(query.id, query.name)}
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            重命名
+                          </ContextMenuItem>
+                          <ContextMenuSeparator />
+                          <ContextMenuItem
+                            onClick={() => handleDeleteQuery(query.id)}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            删除
+                          </ContextMenuItem>
+                        </ContextMenuContent>
+                      </ContextMenu>
+                    </li>
+                  ))
+                )}
+              </TreeNode>
             </ul>
           )}
         </li>
       ))}
         </ul>
       </div>
+
+      {/* 重命名查询对话框 */}
+      {renameDialogOpen && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded border w-[300px]">
+            <h3 className="text-lg font-bold mb-3">重命名查询</h3>
+            <Input
+              value={renameInput}
+              onChange={(e) => setRenameInput(e.target.value)}
+              placeholder="输入新名称"
+              className="mb-3"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') confirmRename();
+                if (e.key === 'Escape') setRenameDialogOpen(false);
+              }}
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-3 py-1 bg-gray-400 text-white rounded"
+                onClick={() => setRenameDialogOpen(false)}
+              >
+                取消
+              </button>
+              <button
+                className="px-3 py-1 bg-blue-500 text-white rounded"
+                onClick={confirmRename}
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

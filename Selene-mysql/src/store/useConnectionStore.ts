@@ -31,7 +31,7 @@ export type ContentTab = {
   // rows_affected?: number;
   execResult?: ExecResult,
 
-  // queryId?: string; // 如果是已有的查询，可保存其 ID
+  savedQueryId?: string; // 关联保存的查询
   isSaved?: boolean;
 };
 
@@ -55,6 +55,9 @@ type ConnectionState = {
   openContentTab: (tab: ContentTab) => void;
   closeContentTab: (id: string) => void;
   updateContentContent: (id: string, content: string) => void;
+  updateContentTitle: (id: string, title: string) => void;
+  updateContentExecResult: (id: string, execResult: ExecResult | undefined) => void;
+  setContentSavedQueryId: (id: string, savedQueryId: string) => void;
   markContentAsSaved: (id: string) => void;
   setActiveContentTab: (id: string) => void;
 
@@ -159,6 +162,30 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     const { contentTabs } = get();
     const updated = contentTabs.map((t) =>
       t.tabId === id ? { ...t, content, isSaved: false } : t
+    );
+    set({ contentTabs: updated });
+  },
+
+  updateContentTitle: (id, title) => {
+    const { contentTabs } = get();
+    const updated = contentTabs.map((t) =>
+      t.tabId === id ? { ...t, title } : t
+    );
+    set({ contentTabs: updated });
+  },
+
+  setContentSavedQueryId: (id, savedQueryId) => {
+    const { contentTabs } = get();
+    const updated = contentTabs.map((t) =>
+      t.tabId === id ? { ...t, savedQueryId, isSaved: true } : t
+    );
+    set({ contentTabs: updated });
+  },
+
+  updateContentExecResult: (id, execResult) => {
+    const { contentTabs } = get();
+    const updated = contentTabs.map((t) =>
+      t.tabId === id ? { ...t, execResult } : t
     );
     set({ contentTabs: updated });
   },

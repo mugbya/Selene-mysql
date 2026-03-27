@@ -5,9 +5,11 @@ import { AlignJustify, FilePlus, Play, Save } from "lucide-react";
 type SqlToolbarProps = {
     handleRun: () => void;
     handleFormat?: () => void;
+    handleSave?: () => void;
+    handleSaveAs?: () => void;
   };
 
-  const SqlToolbar: React.FC<SqlToolbarProps> = ({ handleRun, handleFormat }) => {
+  const SqlToolbar: React.FC<SqlToolbarProps> = ({ handleRun, handleFormat, handleSave, handleSaveAs }) => {
     return(
 
       <div className="flex items-center gap-2 mb-2">
@@ -22,16 +24,16 @@ type SqlToolbarProps = {
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button onClick={handleFormat}>
+          <Button onClick={handleSave}>
             <Save className="w-4 h-4" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>保存SQL</TooltipContent>
+        <TooltipContent>保存查询</TooltipContent>
       </Tooltip>
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button onClick={handleFormat}>
+          <Button onClick={handleSaveAs}>
             <FilePlus className="w-4 h-4" />
           </Button>
         </TooltipTrigger>

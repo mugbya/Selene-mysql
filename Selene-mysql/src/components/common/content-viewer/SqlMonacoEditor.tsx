@@ -6,12 +6,18 @@ import SqlToolbar from "../toolbar/SqlToolbar";
 import { executeSQL } from "@/db/msyql-client";
 import { useConnectionStore } from "@/store/useConnectionStore";
 import { ExecResult, ExecResultProps } from "@/types";
+import { EditableResultTable } from "@/modules/ExecResultTable";
 
 // export default function SqlMonacoEditor({dbKey}: { dbKey: string | null }) {
-export const SqlMonacoEditor: React.FC<ExecResultProps> = ({
+export const SqlMonacoEditor: React.FC<ExecResultProps & { execResult?: ExecResult; onClearResult?: () => void; onSave?: () => void; onSaveAs?: () => void; onContentChange?: (content: string) => void }> = ({
   dbKey,
   onExecResult,
   initialContent,
+  execResult,
+  onClearResult,
+  onSave,
+  onSaveAs,
+  onContentChange,
 }) => {
   // const [code, setCode] = useState("SELECT * FROM users WHERE id = 1;");
   const [code, setCode] = useState(initialContent || "");
@@ -110,20 +116,20 @@ export const SqlMonacoEditor: React.FC<ExecResultProps> = ({
     console.log("[执行 SQL] trimmedText:", trimmedText);
 
     // 简单判断 DDL（更可靠的方式是根据执行结果来判断）
-    const isDDLQuery =
-      trimmedText.startsWith("DROP") ||
-      trimmedText.startsWith("CREATE") ||
-      trimmedText.startsWith("ALTER") ||
-      trimmedText.startsWith("TRUNCATE");
+    // const isDDLQuery =
+    //   trimmedText.startsWith("DROP") ||
+    //   trimmedText.startsWith("CREATE") ||
+    //   trimmedText.startsWith("ALTER") ||
+    //   trimmedText.startsWith("TRUNCATE");
 
-    const isDMLQuery =
-      trimmedText.startsWith("DELETE") ||
-      trimmedText.startsWith("UPDATE") ||
-      trimmedText.startsWith("INSERT") ||
-      trimmedText.startsWith("SELECT");
+    // const isDMLQuery =
+    //   trimmedText.startsWith("DELETE") ||
+    //   trimmedText.startsWith("UPDATE") ||
+    //   trimmedText.startsWith("INSERT") ||
+    //   trimmedText.startsWith("SELECT");
 
-    console.log("[执行 SQL] isDDLQuery:", isDDLQuery);
-    console.log("[执行 SQL] isDMLQuery:", isDMLQuery);
+    // console.log("[执行 SQL] isDDLQuery:", isDDLQuery);
+    // console.log("[执行 SQL] isDMLQuery:", isDMLQuery);
 
     const result = await executeSQL(dbKey, finalText);
 
@@ -137,8 +143,8 @@ export const SqlMonacoEditor: React.FC<ExecResultProps> = ({
         rows_affected: result.data?.rows_affected || 0,
         error: result.message,
         success: false,
-        isDDL: !hasData && isDDLQuery,
-        isDML: hasData || isDMLQuery,
+        isDDL: !hasData ,
+        isDML: hasData ,
       };
       onExecResult?.(errorResult);
       return;
@@ -192,17 +198,21 @@ export const SqlMonacoEditor: React.FC<ExecResultProps> = ({
     // <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative" }}>
     <div className="flex flex-col h-full">
       {/* 工具栏：各种按钮 */}
-      <SqlToolbar handleRun={handleRun} handleFormat={handleFormat} />
+      <SqlToolbar handleRun={handleRun} handleFormat={handleFormat} handleSave={onSave} handleSaveAs={onSaveAs} />
 
       <div
         ref={containerRef}
-        style={{ width: "100%", height: "100%", position: "relative" }}
+        className="flex-1 min-h-0 relative"
+        style={{ width: "100%" }}
       >
         <Editor
           height="100%"
           language="sql"
           value={code}
-          onChange={(value) => setCode(value ?? "")}
+          onChange={(value) => {
+            setCode(value ?? "");
+            onContentChange?.(value ?? "");
+          }}
           theme="vs-light"
           options={{
             fontSize: 13,
@@ -213,12 +223,16 @@ export const SqlMonacoEditor: React.FC<ExecResultProps> = ({
             scrollBeyondLastLine: false,
             lineHeight: 20,
           }}
-          paths={{
-            vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs'
-          }}
           onMount={handleEditorDidMount}
         />
       </div>
+
+      {/* 结果区域：仅在有执行结果时展示 */}
+      {execResult && (
+        <div className="flex-1 min-h-0 border-t overflow-auto p-2">
+          <EditableResultTable result={execResult} onClose={onClearResult} />
+        </div>
+      )}
     </div>
   );
 };
