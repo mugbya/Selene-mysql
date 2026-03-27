@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { SiMysql } from 'react-icons/si';
 import { DBConnectionPersisted, DBConnectionRuntime } from '@/types';
+import { Input } from '@/components/ui/input';
 
 interface Props {
   open: boolean;
@@ -50,7 +51,7 @@ export default function ConnectionFormDialog({
 
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 ">
-      <div className="bg-white p-6 rounded !w-[800px] !h-[600px] !max-w-none !min-w-0  shadow-lg shadow-blue-500/30 flex flex-col">
+      <div className="bg-white p-6 rounded !w-[800px] !h-[600px] !max-w-none !min-w-0 border flex flex-col">
         <div className='flex gap-2 pb-3'>
           <SiMysql className="text-yellow-600 w-10 h-10 " />
           <h3 className="text-lg font-bold mt-2"> 数据库连接</h3>
@@ -59,14 +60,14 @@ export default function ConnectionFormDialog({
         <div className="flex-1 overflow-auto space-y-4">
           <div className="space-y-3">
             <div className="flex gap-6">
-              <input name="name" value={form.name} onChange={handleChange} placeholder="名称" className="w-full p-2 border rounded" />
+              <Input name="name" value={form.name} onChange={handleChange} placeholder="名称" className="w-full" />
             </div>
             <div className="flex gap-6">
-              <input name="host" value={form.host} onChange={handleChange} placeholder="localhost" className="w-full p-2 border rounded" />
-              <input name="port" type="number" value={form.port} onChange={handleChange} placeholder="Port" className="w-full p-2 border rounded" />
+              <Input name="host" value={form.host} onChange={handleChange} placeholder="localhost" className="w-full" />
+              <Input name="port" type="number" value={form.port} onChange={handleChange} placeholder="Port" className="w-full" />
             </div>
-            <input name="username" value={form.username} onChange={handleChange} placeholder="用户名" className="w-full p-2 border rounded" />
-            <input name="password" value={form.password} onChange={handleChange} placeholder="密码" className="w-full p-2 border rounded" />
+            <Input name="username" value={form.username} onChange={handleChange} placeholder="用户名" className="w-full" />
+            <Input name="password" value={form.password} onChange={handleChange} placeholder="密码" className="w-full" />
           </div>
         </div>
 

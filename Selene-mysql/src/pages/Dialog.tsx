@@ -14,7 +14,7 @@ export default function Dialog() {
 
   return (
     <div className="w-full h-screen flex items-center justify-center bg-white">
-      <div className="p-6 border rounded shadow-md bg-gray-100">
+      <div className="p-6 border rounded bg-gray-100">
         <h2 className="text-xl font-bold mb-4">确认操作</h2>
         <p>你确认要执行该操作吗？</p>
         <div className="mt-4 flex justify-end gap-2">

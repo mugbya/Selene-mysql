@@ -29,7 +29,7 @@ export default function ConnectionTabs() {
                 className={`relative flex items-center px-4 py-2 mr-1 rounded-t-lg transition-all duration-150 cursor-pointer
                 ${
                   isActive
-                    ? "bg-white border border-b-0 border-gray-300 shadow-sm z-10"
+                    ? "bg-white border border-b-0 border-gray-300 z-10"
                     : "bg-gray-200 text-gray-600"
                 }
                 `}

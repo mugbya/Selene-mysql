@@ -319,7 +319,7 @@ function WorkSpaceTreePanel({
 
       {filterDialogOpen && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded shadow-lg w-[400px] max-h-[500px] flex flex-col">
+          <div className="bg-white p-4 rounded border w-[400px] max-h-[500px] flex flex-col">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-bold">筛选数据库</h3>
               <button onClick={() => setFilterDialogOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>

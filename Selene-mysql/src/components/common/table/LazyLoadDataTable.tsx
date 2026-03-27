@@ -351,7 +351,7 @@ export default function LazyLoadDataTable({
                   </div>
                   {/* 筛选弹窗 */}
                   {activeFilterCol === idx && (
-                    <div className="absolute top-full left-0 z-20 mt-1 bg-white border rounded shadow-lg p-2" style={{ minWidth: 200, maxHeight: 300, overflow: 'auto' }}>
+                    <div className="absolute top-full left-0 z-20 mt-1 bg-white border rounded p-2" style={{ minWidth: 200, maxHeight: 300, overflow: 'auto' }}>
                       <div className="flex items-center justify-between mb-1 pb-1 border-b">
                         <span className="text-xs font-medium">{col}</span>
                         {hasFilter && (
