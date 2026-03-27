@@ -1,5 +1,5 @@
 import { usePanelsStore } from "@/store/usePanelsStore";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Panel,
   Group,
@@ -11,6 +11,7 @@ import WorkSpaceTreePanel from "./WorkSpaceTreePanel";
 import { EditableResultTable } from "./ExecResultTable";
 import { ExecResult } from "@/types";
 import { ContentTabManager } from "./ContentTabManager";
+import { useConnectionStore } from "@/store/useConnectionStore";
 
 export default function DataBaseView({ tabId, dbKey, databases }: { tabId: string, dbKey: string | null, databases: string[] }) {
 
@@ -19,6 +20,17 @@ export default function DataBaseView({ tabId, dbKey, databases }: { tabId: strin
   const showRightPanel = usePanelsStore((s) => s.showRightPanel);
 
   const leftPanelRef = usePanelRef();
+
+  // 监听内容标签页变化，没有活动标签时清除结果
+  const contentTabs = useConnectionStore((s) => s.contentTabs);
+  const activeContentId = useConnectionStore((s) => s.activeContentId);
+
+  useEffect(() => {
+    // 如果没有活动的内容标签页，清除结果
+    if (!activeContentId || contentTabs.length === 0) {
+      setExecResult(null);
+    }
+  }, [activeContentId, contentTabs]);
 
   return (
     <>
@@ -51,15 +63,18 @@ export default function DataBaseView({ tabId, dbKey, databases }: { tabId: strin
           minSize={30}
         >
           <Group orientation="vertical" className="h-full">
-            <Panel defaultSize={70} minSize={20}>
+            <Panel defaultSize={execResult?.isDDL ? 92 : 70} minSize={20}>
               <ContentTabManager dbKey={dbKey} onExecResult={setExecResult} />
             </Panel>
 
-            {execResult && !execResult.isModify && (
+            {execResult && (
               <>
                 <Separator className="h-1 cursor-row-resize"/>
 
-                <Panel defaultSize={30} minSize={10}>
+                <Panel
+                  defaultSize={execResult?.isDDL ? (execResult.success ? 8 : 25) : 30}
+                  minSize={execResult?.isDDL ? 1 : 10}
+                >
                   <div className="h-full overflow-auto border rounded border-gray-300">
                     <EditableResultTable result={execResult} onClose={() => setExecResult(null)}/>
                   </div>

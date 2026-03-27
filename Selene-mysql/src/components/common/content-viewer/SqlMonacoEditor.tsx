@@ -8,7 +8,11 @@ import { useConnectionStore } from "@/store/useConnectionStore";
 import { ExecResult, ExecResultProps } from "@/types";
 
 // export default function SqlMonacoEditor({dbKey}: { dbKey: string | null }) {
-export const SqlMonacoEditor: React.FC<ExecResultProps> = ({ dbKey, onExecResult, initialContent }) => {
+export const SqlMonacoEditor: React.FC<ExecResultProps> = ({
+  dbKey,
+  onExecResult,
+  initialContent,
+}) => {
   // const [code, setCode] = useState("SELECT * FROM users WHERE id = 1;");
   const [code, setCode] = useState(initialContent || "");
   const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
@@ -20,10 +24,12 @@ export const SqlMonacoEditor: React.FC<ExecResultProps> = ({ dbKey, onExecResult
   const connectiontabs = useConnectionStore((state) => state.connectiontabs);
 
   // 获取当前活动的内容标签
-  const activeContent = contentTabs.find(t => t.tabId === activeContentId);
+  const activeContent = contentTabs.find((t) => t.tabId === activeContentId);
 
   // 获取当前连接（通过 dbKey 匹配）
-  const currentConnection = connectiontabs.find(c => c.key === dbKey || c.tabId === dbKey);
+  const currentConnection = connectiontabs.find(
+    (c) => c.key === dbKey || c.tabId === dbKey,
+  );
 
   // 当 initialContent 变化时更新 code
   useEffect(() => {
@@ -82,95 +88,111 @@ export const SqlMonacoEditor: React.FC<ExecResultProps> = ({ dbKey, onExecResult
     }
   };
 
-  const handleRun = async() => {
+  const handleRun = async () => {
     if (!dbKey) return;
     const text = getSelectedOrAllText();
 
     // 优先使用内容标签的 databaseName，否则使用连接的 currentDb
-    const currentDb = activeContent?.databaseName || currentConnection?.currentDb;
+    const currentDb =
+      activeContent?.databaseName || currentConnection?.currentDb;
 
     // 检查是否需要添加 USE 语句
     const trimmedText = text.trim().toUpperCase();
-    const needsUseDb = currentDb && !trimmedText.startsWith('USE ');
+    const needsUseDb = currentDb && !trimmedText.startsWith("USE ");
     let finalText = text;
     if (needsUseDb) {
       finalText = `USE \`${currentDb}\`;\n${text}`;
       console.log("[执行 SQL] 添加 USE 语句:", finalText);
     }
 
-    const isModifyQuery = trimmedText.startsWith('DROP') ||
-                         trimmedText.startsWith('DELETE') ||
-                         trimmedText.startsWith('UPDATE') ||
-                         trimmedText.startsWith('INSERT') ||
-                         trimmedText.startsWith('CREATE') ||
-                         trimmedText.startsWith('ALTER') ||
-                         trimmedText.startsWith('TRUNCATE');
+    console.log("[执行 SQL] finalText:", finalText);
+
+    console.log("[执行 SQL] trimmedText:", trimmedText);
+
+    // 简单判断 DDL（更可靠的方式是根据执行结果来判断）
+    const isDDLQuery =
+      trimmedText.startsWith("DROP") ||
+      trimmedText.startsWith("CREATE") ||
+      trimmedText.startsWith("ALTER") ||
+      trimmedText.startsWith("TRUNCATE");
+
+    const isDMLQuery =
+      trimmedText.startsWith("DELETE") ||
+      trimmedText.startsWith("UPDATE") ||
+      trimmedText.startsWith("INSERT") ||
+      trimmedText.startsWith("SELECT");
+
+    console.log("[执行 SQL] isDDLQuery:", isDDLQuery);
+    console.log("[执行 SQL] isDMLQuery:", isDMLQuery);
 
     const result = await executeSQL(dbKey, finalText);
-    if (!result.success) {
-        const errorResult: ExecResult = {
-          columns: [],
-          rows: [],
-          rows_affected: 0,
-          error: result.message,
-          success: false
-        };
-        onExecResult?.(errorResult);
-        return;
-    }
 
-    if (!result.data) {
-      if (isModifyQuery) {
-        onExecResult?.({
-          columns: [],
-          rows: [],
-          rows_affected: 0,
-          success: true,
-          isModify: true
-        });
-        return;
-      }
-      
+    // SQL 执行失败
+    if (!result.success) {
+      // 根据结果判断是 DDL 还是 DML 失败
+      const hasData = result.data && (result.data.columns.length > 0 || result.data.rows.length > 0);
       const errorResult: ExecResult = {
-        columns: [],
-        rows: [],
-        rows_affected: 0,
-        error: "查询未返回数据",
-        success: false
+        columns: result.data?.columns || [],
+        rows: result.data?.rows || [],
+        rows_affected: result.data?.rows_affected || 0,
+        error: result.message,
+        success: false,
+        isDDL: !hasData && isDDLQuery,
+        isDML: hasData || isDMLQuery,
       };
       onExecResult?.(errorResult);
-        return;
+      return;
     }
-    
-    if (isModifyQuery) {
+
+    // SQL 执行成功，根据结果判断类型
+    // 如果有 columns 或 rows 数据，则是查询/DML；否则是 DDL
+    const hasData = result.data && (result.data.columns.length > 0 || result.data.rows.length > 0);
+    const isDDL = !hasData; // 没有结果数据的就是 DDL
+
+    if (isDDL) {
+      // DDL 操作成功
       onExecResult?.({
-        ...result.data,
+        columns: [],
+        rows: [],
+        rows_affected: result.data?.rows_affected || 0,
         success: true,
-        isModify: true
+        isDDL: true,
       });
 
       // 如果是 DROP TABLE，触发事件刷新表列表
-      if (trimmedText.startsWith('DROP')) {
-        const tableName = text.trim().replace(/^DROP\s+TABLE\s+/i, '').replace(/^DROP\s+TABLE\s+IF\s+EXISTS\s+/i, '').replace(/[`;]/g, '').trim();
-        const event = new CustomEvent('table-dropped', {
-          detail: { dbKey, dbName: currentDb, tableName }
+      if (trimmedText.startsWith("DROP")) {
+        const tableName = text
+          .trim()
+          .replace(/^DROP\s+TABLE\s+/i, "")
+          .replace(/^DROP\s+TABLE\s+IF\s+EXISTS\s+/i, "")
+          .replace(/[`;]/g, "")
+          .trim();
+        const event = new CustomEvent("table-dropped", {
+          detail: { dbKey, dbName: currentDb, tableName },
         });
         window.dispatchEvent(event);
       }
       return;
     }
-    
-    const data:ExecResult = result.data;
-    const { columns, rows, rows_affected  } = data;
+
+    // DML/查询操作
+    const data: ExecResult = result.data as ExecResult;
+    const { columns, rows, rows_affected } = data;
     console.log("[执行 SQL] 结果:", columns, rows, rows_affected);
-    onExecResult?.({ ...data, success: true });
+
+    // 如果查询返回空结果，不显示结果面板
+    if (columns.length === 0 && rows.length === 0) {
+      return;
+    }
+
+    onExecResult?.({ ...data, success: true, isDML: true });
   };
 
   return (
     // <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative" }}>
     <div className="flex flex-col h-full">
       {/* 工具栏：各种按钮 */}
-      <SqlToolbar handleRun={handleRun} handleFormat={handleFormat}/>
+      <SqlToolbar handleRun={handleRun} handleFormat={handleFormat} />
 
       <div
         ref={containerRef}
@@ -184,7 +206,8 @@ export const SqlMonacoEditor: React.FC<ExecResultProps> = ({ dbKey, onExecResult
           theme="vs-light"
           options={{
             fontSize: 13,
-            fontFamily: "'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace",
+            fontFamily:
+              "'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace",
             minimap: { enabled: false },
             wordWrap: "on",
             scrollBeyondLastLine: false,
@@ -195,4 +218,4 @@ export const SqlMonacoEditor: React.FC<ExecResultProps> = ({ dbKey, onExecResult
       </div>
     </div>
   );
-}
+};

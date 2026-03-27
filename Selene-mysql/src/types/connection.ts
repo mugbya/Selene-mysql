@@ -51,7 +51,9 @@ export type ExecResult = {
   hasMore?: boolean;
   error?: string;
   success?: boolean;
-  isModify?: boolean;
+  // isModify?: boolean;
+  isDDL?: boolean;
+  isDML?: boolean;
 };
 
 export interface EditableTableProps {
