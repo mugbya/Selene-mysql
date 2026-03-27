@@ -22,7 +22,7 @@ import { TableVisibilityDialog } from "@/components/common/dialog/TableVisibilit
 import { ExportWizardDialog } from "@/components/common/dialog/ExportWizardDialog";
 import { CreateDatabaseDialog } from "@/components/common/dialog/CreateDatabaseDialog";
 import { fetchTables } from "@/db/msyql-client";
-import { useSavedQueries } from "@/hooks/useSavedQueries";
+import { useSavedQueries, getSavedQueryContent } from "@/hooks/useSavedQueries";
 import { SaveQueryDialog } from "@/components/common/dialog/SaveQueryDialog";
 import { Input } from "@/components/ui/input";
 
@@ -116,18 +116,25 @@ function WorkSpaceTreePanel({
     setActiveContentTab(newTabId);
   };
 
-  // 打开保存的查询
-  const openSavedQuery = (savedQuery: { id: string; name: string; content: string; databaseName?: string }) => {
+  // 打开保存的查询 - 从 localStorage 读取内容
+  const openSavedQuery = (savedQuery: { id: string; name: string; databaseName?: string }) => {
     if (!dbKey) return;
+
+    // 从 localStorage 读取完整查询内容
+    const fullQuery = getSavedQueryContent(savedQuery.id);
+    if (!fullQuery) {
+      toast.error("无法加载查询内容");
+      return;
+    }
 
     const newTabId = nanoid();
     openContentTab({
       tabId: newTabId,
       title: savedQuery.name,
       tabType: 'query',
-      content: savedQuery.content,
+      content: fullQuery.content,
       dbKey,
-      databaseName: savedQuery.databaseName,
+      databaseName: fullQuery.databaseName,
       savedQueryId: savedQuery.id,
       isSaved: true,
     });
@@ -308,12 +315,25 @@ function WorkSpaceTreePanel({
         }
       }
 
+      // 删除该数据库关联的查询列表（根据 dbKey）
+      // 注意：删除数据库时，查询应该根据 dbKey 来删除，而不是 dbKey + databaseName
+      // 因为新建同名数据库时，databaseName 可能相同但查询应该被清空了
+      const savedQueriesRaw = localStorage.getItem('saved-queries');
+      if (savedQueriesRaw) {
+        let savedQueries = JSON.parse(savedQueriesRaw);
+        // 过滤掉与当前 dbKey 关联的查询
+        savedQueries = savedQueries.filter((q: any) => q.dbKey !== dbKey);
+        localStorage.setItem('saved-queries', JSON.stringify(savedQueries));
+        // 刷新显示
+        refreshQueries();
+      }
+
       // 更新本地 dbTrees 状态
       setDBTrees(prev => prev.filter(db => db.name !== dbName));
     } else {
       toast.error("删除失败: " + result.message);
     }
-  }, [dbKey, tabId]);
+  }, [dbKey, tabId, refreshQueries]);
 
   function handleAction(action: string, dbName: string) {
     console.log(`[WorkSpaceTreePanel] 执行 ${action} 操作，数据库：${dbName}`);
