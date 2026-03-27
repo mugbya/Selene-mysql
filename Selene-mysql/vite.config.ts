@@ -17,6 +17,26 @@ export default defineConfig(async () => ({
     },
   },
 
+  // Monaco Editor 本地化配置，避免 CDN 404
+  optimizeDeps: {
+    include: ['monaco-editor'],
+    esbuildOptions: {
+      define: {
+        global: 'globalThis'
+      }
+    }
+  },
+
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'monaco-editor': ['monaco-editor']
+        }
+      }
+    }
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors

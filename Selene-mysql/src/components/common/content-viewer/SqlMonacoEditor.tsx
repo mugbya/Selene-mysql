@@ -213,6 +213,9 @@ export const SqlMonacoEditor: React.FC<ExecResultProps> = ({
             scrollBeyondLastLine: false,
             lineHeight: 20,
           }}
+          paths={{
+            vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs'
+          }}
           onMount={handleEditorDidMount}
         />
       </div>

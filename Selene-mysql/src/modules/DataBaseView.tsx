@@ -40,7 +40,7 @@ export default function DataBaseView({ tabId, dbKey, databases }: { tabId: strin
             id="left"
             panelRef={leftPanelRef}
             minSize={125}
-            defaultSize={230}
+            defaultSize={300}
             collapsible
             className="border border-zinc-300 rounded-md overflow-hidden"
           >

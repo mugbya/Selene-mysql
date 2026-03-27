@@ -225,9 +225,9 @@ export function TableTreeLeaf({
               tableName: tableName,
             });
           }}>导出表结构</ContextMenuItem>
-          <ContextMenuSeparator />
+          {/* <ContextMenuSeparator /> */}
           {/* <ContextMenuItem onClick={() => handleAction("control")}>表显示控制</ContextMenuItem> */}
-          <ContextMenuSeparator />
+          {/* <ContextMenuSeparator /> */}
           {/* <ContextMenuItem onClick={() => openTable("refresh")}>刷新</ContextMenuItem> */}
 
           {/* <ContextMenuItem onClick={() => handleAction("export")}>转储SQL文件</ContextMenuItem> */}
