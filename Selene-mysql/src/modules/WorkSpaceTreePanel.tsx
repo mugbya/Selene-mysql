@@ -297,6 +297,17 @@ function WorkSpaceTreePanel({
       const newDatabases = currentDatabases.filter(db => db !== dbName);
       useConnectionStore.getState().updateConnectionDisplayDatabases(tabId, newDatabases);
 
+      // 同时更新 localStorage 中的 displayDatabases
+      const savedConnections = JSON.parse(localStorage.getItem('db-connections') || '[]');
+      const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
+      if (connection?.key) {
+        const connIndex = savedConnections.findIndex((c: any) => c.id === connection.key);
+        if (connIndex >= 0) {
+          savedConnections[connIndex].displayDatabases = newDatabases;
+          localStorage.setItem('db-connections', JSON.stringify(savedConnections));
+        }
+      }
+
       // 更新本地 dbTrees 状态
       setDBTrees(prev => prev.filter(db => db.name !== dbName));
     } else {
