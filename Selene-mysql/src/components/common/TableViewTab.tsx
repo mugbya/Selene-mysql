@@ -4,6 +4,7 @@ import LazyLoadDataTable from "./table/LazyLoadDataTable";
 import { executeSQL } from "@/db/msyql-client";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import { RotateCcw, XCircle } from "lucide-react";
 
 // 筛选条件类型
 type FilterCondition = {
@@ -151,13 +152,15 @@ export const TableViewTab = ({
     <div className="flex flex-col h-full gap-2">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold">{tableName}</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           {filters.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={handleClearFilters}>
-              清空筛选
+            <Button variant="ghost" size="sm" onClick={handleClearFilters} title="清空筛选">
+              <XCircle className="w-3 h-3" />
             </Button>
           )}
-          <Button variant="outline" onClick={handleRefresh}>刷新</Button>
+          <Button variant="ghost" size="sm" onClick={handleRefresh} title="刷新">
+            <RotateCcw className="w-3 h-3" />
+          </Button>
         </div>
       </div>
       <div className="flex-1 overflow-hidden">

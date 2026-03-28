@@ -51,13 +51,12 @@ export function TableExportTab({ dbKey, dbName, tableName }: TableExportTabProps
           <span className="font-medium">{tableName}</span>
           <span className="text-sm text-gray-500">表结构</span>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={loadTableStructure} disabled={loading}>
-            <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-            刷新
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" onClick={loadTableStructure} disabled={loading} title="刷新">
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
           </Button>
-          <Button variant="outline" size="sm" onClick={handleCopy}>
-            <Copy className="w-4 h-4 mr-1" /> 复制
+          <Button variant="ghost" size="sm" onClick={handleCopy} title="复制">
+            <Copy className="w-3 h-3" />
           </Button>
         </div>
       </div>

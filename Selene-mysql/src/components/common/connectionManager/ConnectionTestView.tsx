@@ -1,7 +1,7 @@
 import { testConnection } from "@/db/msyql-client";
 import { DBConnectionPersisted } from "@/types";
-
 import { useState } from "react";
+import { Zap, Loader2, CheckCircle, XCircle } from "lucide-react";
 
 interface Props {
   conn: DBConnectionPersisted;
@@ -10,7 +10,6 @@ interface Props {
 const ConnectionTestView = ({ conn }: Props) => {
   // 连接测试返回状态
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-
 
   const handleTestConnect = async (
     conn: DBConnectionPersisted,
@@ -34,14 +33,15 @@ const ConnectionTestView = ({ conn }: Props) => {
 
   return (
     <>
-      {status === "loading" && <span className="text-gray-400">测试中...</span>}
-      {status === "success" && <span className="text-green-600">✓ 成功</span>}
-      {status === "error" && <span className="text-red-600">✗ 失败</span>}
       <button
         onClick={() => handleTestConnect(conn, setStatus)}
-        className="bg-blue-500 px-2 py-1 text-white rounded text-sm"
+        className="p-1 hover:bg-blue-100 rounded text-blue-600"
+        title="测试连接"
       >
-        测试连接
+        {status === "loading" && <Loader2 className="w-3 h-3 animate-spin" />}
+        {status === "success" && <CheckCircle className="w-3 h-3" />}
+        {status === "error" && <XCircle className="w-3 h-3" />}
+        {status === "idle" && <Zap className="w-3 h-3" />}
       </button>
     </>
   );

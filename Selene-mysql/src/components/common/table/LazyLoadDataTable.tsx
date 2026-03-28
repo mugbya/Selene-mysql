@@ -484,44 +484,46 @@ export default function LazyLoadDataTable({
   return (
     <div className="flex flex-col h-full border rounded-md overflow-hidden">
       {/* 功能栏 */}
-      <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between px-2 py-1 border-b bg-gray-50">
+        <div className="flex items-center gap-1">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             disabled={page === 0}
             onClick={() => setPage((p) => Math.max(0, p - 1))}
+            title="上一页"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3 h-3" />
           </Button>
           <span className="text-xs text-gray-700">
-            第 {page + 1} 页 / 共 {maxPage + 1} 页
+            {page + 1} / {maxPage + 1}
           </span>
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             disabled={page >= maxPage}
             onClick={() => setPage((p) => p + 1)}
+            title="下一页"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3 h-3" />
           </Button>
         </div>
         <div className="text-xs text-gray-500">
           {Object.keys(filters).length > 0 ? (
             <>显示 {filteredRows.length} / {totalCount} 条</>
           ) : (
-            <>总共 {totalCount} 条</>
+            <>共 {totalCount} 条</>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={handleAddRow}>
-            <Plus className="w-4 h-4 mr-1" /> 添加
+        <div className="flex items-center gap-1">
+          <Button size="sm" variant="ghost" onClick={handleAddRow} title="添加行">
+            <Plus className="w-3 h-3" />
           </Button>
-          <Button size="sm" variant="outline" onClick={handleSave}>
-            <Save className="w-4 h-4 mr-1" /> 保存
+          <Button size="sm" variant="ghost" onClick={handleSave} title="保存">
+            <Save className="w-3 h-3" />
           </Button>
-          <Button size="sm" variant="destructive" onClick={handleDelete}>
-            <Trash className="w-4 h-4 mr-1" /> 删除
+          <Button size="sm" variant="ghost" onClick={handleDelete} title="删除选中行">
+            <Trash className="w-3 h-3" />
           </Button>
         </div>
       </div>

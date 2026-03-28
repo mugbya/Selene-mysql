@@ -245,14 +245,14 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
             autoCorrect="off"
           />
         </div>
-        <Button onClick={addColumn} variant="outline" size="sm">
-          <Plus className="w-4 h-4 mr-1" />
-          添加字段
-        </Button>
-        <Button onClick={handleCreate} disabled={loading} size="sm">
-          <Play className="w-4 h-4 mr-1" />
-          {loading ? "创建中..." : "执行创建"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={addColumn} variant="ghost" size="sm" title="添加字段">
+            <Plus className="w-3 h-3" />
+          </Button>
+          <Button onClick={handleCreate} disabled={loading} variant="ghost" size="sm" title={loading ? "创建中..." : "执行创建"}>
+            <Play className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
 
       {/* 执行结果区域 */}
@@ -384,19 +384,14 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 text-xs"
+            className="h-5 w-5 p-0"
             onClick={copySQL}
+            title={copied ? "已复制" : "复制"}
           >
             {copied ? (
-              <>
-                <Check className="w-3 h-3 mr-1" />
-                已复制
-              </>
+              <Check className="w-3 h-3 text-green-600" />
             ) : (
-              <>
-                <Copy className="w-3 h-3 mr-1" />
-                复制
-              </>
+              <Copy className="w-3 h-3" />
             )}
           </Button>
         </div>
