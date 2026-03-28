@@ -22,7 +22,7 @@ const notifyListeners = () => {
   listeners.forEach(listener => listener());
 };
 
-// 只保存索引，不保存 content
+// 共享状态
 let sharedQueryIndexes: SavedQueryIndex[] = [];
 
 const loadIndexesFromStorage = (): SavedQueryIndex[] => {
@@ -30,7 +30,7 @@ const loadIndexesFromStorage = (): SavedQueryIndex[] => {
   if (!raw) return [];
   const queries: SavedQuery[] = JSON.parse(raw);
   // 转换为索引格式
-  return queries.map(q => ({
+  sharedQueryIndexes = queries.map(q => ({
     id: q.id,
     name: q.name,
     dbKey: q.dbKey,
@@ -38,24 +38,7 @@ const loadIndexesFromStorage = (): SavedQueryIndex[] => {
     createdAt: q.createdAt,
     updatedAt: q.updatedAt,
   }));
-};
-
-const saveIndexesToStorage = (indexes: SavedQueryIndex[]) => {
-  // 保存完整的查询数据到 localStorage（包含 content）
-  // 这里需要读取现有的完整数据，只更新索引部分
-  const raw = localStorage.getItem(STORAGE_KEY);
-  let fullQueries: SavedQuery[] = raw ? JSON.parse(raw) : [];
-
-  // 更新 fullQueries 中的索引信息
-  fullQueries = fullQueries.map(q => {
-    const idx = indexes.find(i => i.id === q.id);
-    if (idx) {
-      return { ...q, name: idx.name, updatedAt: idx.updatedAt };
-    }
-    return q;
-  });
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(fullQueries));
+  return sharedQueryIndexes;
 };
 
 const subscribe = (listener: Listener) => {
@@ -72,18 +55,16 @@ export const getSavedQueryContent = (id: string): SavedQuery | null => {
 };
 
 export const useSavedQueries = (dbKey?: string | null) => {
-  const [queryIndexes, setQueryIndexes] = useState<SavedQueryIndex[]>([]);
-
-  // 初始加载索引
+  // 初始加载
   useEffect(() => {
-    setQueryIndexes(loadIndexesFromStorage());
+    loadIndexesFromStorage();
   }, []);
 
   // 使用 useSyncExternalStore 同步状态
   const savedQueries = useSyncExternalStore(
     subscribe,
-    () => queryIndexes,
-    () => queryIndexes
+    () => sharedQueryIndexes,
+    () => sharedQueryIndexes
   );
 
   // 根据 dbKey 过滤查询
@@ -106,7 +87,7 @@ export const useSavedQueries = (dbKey?: string | null) => {
     queries.push(newQuery);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(queries));
 
-    // 更新内存中的索引
+    // 更新共享索引
     const newIndex: SavedQueryIndex = {
       id: newQuery.id,
       name: newQuery.name,
@@ -115,7 +96,7 @@ export const useSavedQueries = (dbKey?: string | null) => {
       createdAt: newQuery.createdAt,
       updatedAt: newQuery.updatedAt,
     };
-    setQueryIndexes(prev => [...prev, newIndex]);
+    sharedQueryIndexes = [...sharedQueryIndexes, newIndex];
     notifyListeners();
 
     return newQuery;
@@ -132,13 +113,10 @@ export const useSavedQueries = (dbKey?: string | null) => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     }
 
-    // 更新内存中的索引
-    setQueryIndexes(prev => {
-      const updated = prev.map(q =>
-        q.id === id ? { ...q, ...patch, updatedAt: Date.now() } : q
-      );
-      return updated;
-    });
+    // 更新共享索引
+    sharedQueryIndexes = sharedQueryIndexes.map(q =>
+      q.id === id ? { ...q, ...patch, updatedAt: Date.now() } : q
+    );
     notifyListeners();
   }, []);
 
@@ -151,8 +129,8 @@ export const useSavedQueries = (dbKey?: string | null) => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
     }
 
-    // 从内存索引中删除
-    setQueryIndexes(prev => prev.filter(q => q.id !== id));
+    // 从共享索引中删除
+    sharedQueryIndexes = sharedQueryIndexes.filter(q => q.id !== id);
     notifyListeners();
   }, []);
 
@@ -162,7 +140,7 @@ export const useSavedQueries = (dbKey?: string | null) => {
 
   // 刷新查询列表
   const refreshQueries = useCallback(() => {
-    setQueryIndexes(loadIndexesFromStorage());
+    loadIndexesFromStorage();
     notifyListeners();
   }, []);
 
