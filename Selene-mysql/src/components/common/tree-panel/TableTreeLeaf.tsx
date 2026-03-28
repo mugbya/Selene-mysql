@@ -98,6 +98,8 @@ export function TableTreeLeaf({
       return;
     }
     console.log(`[设计表] ${dbName}.${tableName}`);
+
+    // 1. 查询列信息
     const text = `SELECT
         column_name,
         data_type,
@@ -108,9 +110,9 @@ export function TableTreeLeaf({
         column_default,
         column_comment
       FROM information_schema.columns
-      WHERE table_schema = '${dbName}' AND table_name = '${tableName}';`;
-    
-      // 在 MySQL 中，information_schema.columns 有 column_comment 字段，可以直接查询：
+      WHERE table_schema = '${dbName}' AND table_name = '${tableName}'
+      ORDER BY ordinal_position;`;
+
     console.log(text);
     const result = await executeSQL(dbkey, text);
     if (!result.success) {
@@ -121,6 +123,27 @@ export function TableTreeLeaf({
       toast.error(`查询未返回数据`, { closeButton: true });
       return;
     }
+
+    // 2. 查询主键信息
+    const pkSql = `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+      WHERE TABLE_SCHEMA = '${dbName}' AND TABLE_NAME = '${tableName}' AND CONSTRAINT_NAME = 'PRIMARY';`;
+    const pkResult = await executeSQL(dbkey, pkSql);
+    const primaryKeys = new Set<string>();
+    if (pkResult.success && pkResult.data) {
+      pkResult.data.rows.forEach(row => primaryKeys.add(row[0]));
+    }
+
+    // 3. 查询唯一键信息
+    const ukSql = `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+      WHERE TABLE_SCHEMA = '${dbName}' AND TABLE_NAME = '${tableName}' AND CONSTRAINT_NAME != 'PRIMARY'
+      AND CONSTRAINT_NAME IN (SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+      WHERE TABLE_SCHEMA = '${dbName}' AND TABLE_NAME = '${tableName}' AND CONSTRAINT_TYPE = 'UNIQUE');`;
+    const ukResult = await executeSQL(dbkey, ukSql);
+    const uniqueKeys = new Set<string>();
+    if (ukResult.success && ukResult.data) {
+      ukResult.data.rows.forEach(row => uniqueKeys.add(row[0]));
+    }
+
     // console.log(result.data);
     const columnIndexMap = Object.fromEntries(result.data.columns.map((col, idx) => [col, idx]));
     const newRows = result.data.rows.map((row) => {
@@ -137,10 +160,16 @@ export function TableTreeLeaf({
             : `${numPrec}`
           : "";
 
+      const colName = row[columnIndexMap["COLUMN_NAME"]];
+      const isPK = primaryKeys.has(colName) ? "YES" : "";
+      const isUK = uniqueKeys.has(colName) ? "YES" : "";
+
       return [
         row[columnIndexMap["COLUMN_NAME"]],
         row[columnIndexMap["DATA_TYPE"]],
         length,
+        isPK,
+        isUK,
         row[columnIndexMap["IS_NULLABLE"]],
         row[columnIndexMap["COLUMN_DEFAULT"]],
         row[columnIndexMap["COLUMN_COMMENT"]],
@@ -151,10 +180,12 @@ export function TableTreeLeaf({
       columns: [
         "字段名",
         "类型",
-        "长度", // ← 合并字段
+        "长度",
+        "主键",
+        "唯一键",
         "可空",
         "默认值",
-        "注释"
+        "注释",
       ],
       rows: newRows,
       rows_affected: result.data.rows_affected,

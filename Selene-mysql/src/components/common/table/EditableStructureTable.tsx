@@ -11,7 +11,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { Trash2, Plus, Save } from "lucide-react";
+import { Trash2, Plus, Save, Undo2 } from "lucide-react";
 import { executeSQL } from "@/db/msyql-client";
 
 export interface ExecResult {
@@ -94,7 +94,7 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
   const handleAddNewRow = () => {
     setNewRows((prev) => [
       ...prev,
-      { "字段名": "", "类型": "varchar", "长度": "255", "可空": "YES", "默认值": "", "注释": "" },
+      { "字段名": "", "类型": "varchar", "长度": "255", "主键": "", "唯一键": "", "可空": "YES", "默认值": "", "注释": "" },
     ]);
   };
 
@@ -105,6 +105,12 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
   // 生成修改列的 SQL
   const generateAlterSQL = useMemo(() => {
     const sqls: string[] = [];
+
+    // 用于收集需要添加/删除的主键和唯一键
+    const addPrimaryKeys: string[] = [];
+    const dropPrimaryKeys: string[] = [];
+    const addUniqueKeys: string[] = [];
+    const dropUniqueKeys: string[] = [];
 
     // 处理修改的列
     Object.entries(editedRows).forEach(([rowIndexStr, edits]) => {
@@ -117,9 +123,14 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
       const columnName = getVal("字段名");
       const type = edits["类型"] ?? getVal("类型");
       const length = edits["长度"] ?? getVal("长度");
+      const isPK = edits["主键"] ?? getVal("主键");
+      const isUK = edits["唯一键"] ?? getVal("唯一键");
       const isNullableRaw = edits["可空"] ?? getVal("可空");
       const defaultVal = edits["默认值"] ?? getVal("默认值");
       const comment = edits["注释"] ?? getVal("注释");
+
+      const originalIsPK = getVal("主键");
+      const originalIsUK = getVal("唯一键");
 
       const isNullable = isNullableRaw === "YES";
       const nullableSQL = isNullable ? "NULL" : "NOT NULL";
@@ -143,6 +154,20 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
       if (comment) {
         sqls.push(`ALTER TABLE \`${tableName}\` MODIFY COLUMN \`${columnName}\` ${typeSQL} ${nullableSQL} ${defaultSQL} COMMENT '${comment.replace(/'/g, "''")}';`);
       }
+
+      // 处理主键变更
+      if (isPK === "YES" && originalIsPK !== "YES") {
+        addPrimaryKeys.push(`\`${columnName}\``);
+      } else if (isPK !== "YES" && originalIsPK === "YES") {
+        dropPrimaryKeys.push(`\`${columnName}\``);
+      }
+
+      // 处理唯一键变更
+      if (isUK === "YES" && originalIsUK !== "YES") {
+        addUniqueKeys.push(`\`${columnName}\``);
+      } else if (isUK !== "YES" && originalIsUK === "YES") {
+        dropUniqueKeys.push(`\`${columnName}\``);
+      }
     });
 
     // 处理删除的列
@@ -159,6 +184,8 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
       const columnName = newRow["字段名"];
       const type = newRow["类型"] || "varchar";
       const length = newRow["长度"] || "255";
+      const isPK = newRow["主键"] === "YES";
+      const isUK = newRow["唯一键"] === "YES";
       const isNullable = newRow["可空"] === "YES";
       const defaultVal = newRow["默认值"];
       const comment = newRow["注释"];
@@ -170,12 +197,38 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
 
       let sql = `ALTER TABLE \`${tableName}\` ADD COLUMN \`${columnName}\` ${typeSQL} ${isNullable ? "NULL" : "NOT NULL"}`;
       if (defaultVal) sql += ` DEFAULT '${defaultVal.replace(/'/g, "''")}'`;
+      if (isPK) sql += ` PRIMARY KEY`;
       sql += ";";
       sqls.push(sql);
 
       if (comment) {
-        sqls.push(`ALTER TABLE \`${tableName}\` MODIFY COLUMN \`${columnName}\` ${typeSQL} ${isNullable ? "NULL" : "NOT NULL"} COMMENT '${comment.replace(/'/g, "''")}';`);
+        sqls.push(`ALTER TABLE \`${tableName}\` MODIFY COLUMN \`${columnName}\` ${typeSQL} ${isNullable ? "NULL" : "NOT NULL"} ${isPK ? 'PRIMARY KEY' : ''} COMMENT '${comment.replace(/'/g, "''")}';`);
       }
+
+      // 处理新增列的唯一键
+      if (isUK && !isPK) {
+        sqls.push(`ALTER TABLE \`${tableName}\` ADD UNIQUE (\`${columnName}\`);`);
+      }
+    });
+
+    // 添加删除主键的 SQL
+    if (dropPrimaryKeys.length > 0) {
+      sqls.push(`ALTER TABLE \`${tableName}\` DROP PRIMARY KEY;`);
+    }
+
+    // 添加删除唯一键的 SQL（需要先获取约束名）
+    if (dropUniqueKeys.length > 0) {
+      // 简化处理：暂不自动删除唯一键，让用户手动处理
+    }
+
+    // 添加主键的 SQL
+    if (addPrimaryKeys.length > 0) {
+      sqls.push(`ALTER TABLE \`${tableName}\` ADD PRIMARY KEY (${addPrimaryKeys.join(', ')});`);
+    }
+
+    // 添加唯一键的 SQL
+    addUniqueKeys.forEach(col => {
+      sqls.push(`ALTER TABLE \`${tableName}\` ADD UNIQUE (\`${col}\`);`);
     });
 
     return sqls;
@@ -214,41 +267,42 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
   const displayRows = result.rows.filter((_, idx) => !deletedRows.has(idx));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-600">
+        <div className="text-xs text-gray-600">
           表名: <span className="font-medium">{tableName}</span>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleAddNewRow}>
-            <Plus className="w-4 h-4 mr-1" /> 添加列
+        <div className="flex gap-1">
+          <Button variant="ghost" size="sm" onClick={handleAddNewRow} title="添加列">
+            <Plus className="w-3 h-3" />
           </Button>
-          <Button size="sm" onClick={handleSave} disabled={saving || generateAlterSQL.length === 0}>
-            <Save className="w-4 h-4 mr-1" />
-            {saving ? "保存中..." : "保存"}
+          <Button size="sm" onClick={handleSave} disabled={saving || generateAlterSQL.length === 0} title="保存">
+            <Save className="w-3 h-3" />
           </Button>
         </div>
       </div>
 
       <Card>
-        <CardContent className="overflow-auto">
-          <table className="min-w-full table-auto text-sm">
+        <CardContent className="overflow-auto p-1">
+          <table className="min-w-full table-auto text-xs">
             <colgroup>
-              <col style={{ width: '30px' }} />
-              <col style={{ width: '180px' }} />
-              <col style={{ width: '120px' }} />
-              <col style={{ width: '80px' }} />
+              <col style={{ width: '20px' }} />
+              <col style={{ width: '140px' }} />
+              <col style={{ width: '40px' }} />
               <col style={{ width: '60px' }} />
-              <col style={{ width: '100px' }} />
-              <col style={{ width: '150px' }} />
+              <col style={{ width: '40px' }} />
+              <col style={{ width: '40px' }} />
+              <col style={{ width: '40px' }} />
+              <col style={{ width: '60px' }} />
+              <col style={{ width: '200px' }} />
             </colgroup>
             <thead>
-              <tr className="bg-gray-300">
-                <th className="px-2 py-2 text-center border-b font-medium">操作</th>
+              <tr className="bg-gray-200">
+                <th className="px-1 py-1 text-center border-b font-medium"></th>
                 {result.columns.map((col) => (
                   <th
                     key={col}
-                    className="px-2 py-2 text-left border-b font-medium"
+                    className="px-1 py-1 text-left border-b font-medium"
                   >
                     {col}
                   </th>
@@ -259,15 +313,11 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
             <tbody>
               {displayRows.map((row, rowIndex) => (
                 <tr key={rowIndex} className="bg-gray-50 border-b hover:bg-gray-100">
-                  <td className="px-2 py-1 text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                  <td className="px-1 py-0.5 text-center">
+                    <Trash2
+                      className="w-3 h-3 text-red-400 hover:text-red-600 cursor-pointer"
                       onClick={() => handleDeleteRow(rowIndex)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    />
                   </td>
                   {row.map((cell, colIndex) => {
                     const column = result.columns[colIndex];
@@ -275,19 +325,19 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
                     if (column === "类型") {
                       const editedValue = editedRows[rowIndex]?.[column] ?? cell;
                       return (
-                        <td key={`${rowIndex}-${colIndex}`} className="px-2 py-1">
+                        <td key={`${rowIndex}-${colIndex}`} className="px-1 py-0.5">
                           <Select
                             value={editedValue?.toString() || "varchar"}
                             onValueChange={(value) =>
                               handleChange(rowIndex, column, value)
                             }
                           >
-                            <SelectTrigger className="w-[120px] h-8">
+                            <SelectTrigger className="w-full h-5 text-xs rounded-none">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               {sqlDataTypes.map((type) => (
-                                <SelectItem key={type} value={type}>
+                                <SelectItem key={type} value={type} className="text-xs">
                                   {type}
                                 </SelectItem>
                               ))}
@@ -300,10 +350,10 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
                     if (column === "可空") {
                       const editedValue = editedRows[rowIndex]?.[column] ?? cell;
                       return (
-                        <td key={`${rowIndex}-${colIndex}`} className="px-2 py-1 text-center">
+                        <td key={`${rowIndex}-${colIndex}`} className="px-1 py-0.5 text-center">
                           <input
                             type="checkbox"
-                            className="w-4 h-4"
+                            className="w-3 h-3"
                             checked={editedValue === "YES"}
                             onChange={(e) =>
                               handleChange(
@@ -317,13 +367,34 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
                       );
                     }
 
+                    if (column === "主键" || column === "唯一键") {
+                      // 主键和唯一键列显示为 checkbox（可编辑）
+                      const editedValue = editedRows[rowIndex]?.[column] ?? cell;
+                      return (
+                        <td key={`${rowIndex}-${colIndex}`} className="px-1 py-0.5 text-center">
+                          <input
+                            type="checkbox"
+                            className="w-3 h-3"
+                            checked={editedValue === "YES"}
+                            onChange={(e) =>
+                              handleChange(
+                                rowIndex,
+                                column,
+                                e.target.checked ? "YES" : ""
+                              )
+                            }
+                          />
+                        </td>
+                      );
+                    }
+
                     const editedValue = editedRows[rowIndex]?.[column];
                     const displayValue = editedValue !== undefined ? editedValue : cell;
 
                     return (
-                      <td key={`${rowIndex}-${colIndex}`} className="px-2 py-1">
+                      <td key={`${rowIndex}-${colIndex}`} className="px-1 py-0.5">
                         <Input
-                          className="h-8"
+                          className="h-5 text-xs rounded-none"
                           value={displayValue?.toString() || ""}
                           onChange={(e) =>
                             handleChange(rowIndex, column, e.target.value)
@@ -338,32 +409,28 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
               {/* 新增列 */}
               {newRows.map((newRow, rowIndex) => (
                 <tr key={`new-${rowIndex}`} className="bg-green-50 border-b hover:bg-green-100">
-                  <td className="px-2 py-1 text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                  <td className="px-1 py-0.5 text-center">
+                    <Trash2
+                      className="w-3 h-3 text-red-400 hover:text-red-600 cursor-pointer"
                       onClick={() => handleRemoveNewRow(rowIndex)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    />
                   </td>
                   {result.columns.map((column, colIndex) => {
                     if (column === "类型") {
                       return (
-                        <td key={`new-${rowIndex}-${colIndex}`} className="px-2 py-1">
+                        <td key={`new-${rowIndex}-${colIndex}`} className="px-1 py-0.5">
                           <Select
                             value={newRow[column] || "varchar"}
                             onValueChange={(value) =>
                               handleNewRowChange(rowIndex, column, value)
                             }
                           >
-                            <SelectTrigger className="w-[120px] h-8">
+                            <SelectTrigger className="w-full h-5 text-xs rounded-none">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               {sqlDataTypes.map((type) => (
-                                <SelectItem key={type} value={type}>
+                                <SelectItem key={type} value={type} className="text-xs">
                                   {type}
                                 </SelectItem>
                               ))}
@@ -375,10 +442,10 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
 
                     if (column === "可空") {
                       return (
-                        <td key={`new-${rowIndex}-${colIndex}`} className="px-2 py-1 text-center">
+                        <td key={`new-${rowIndex}-${colIndex}`} className="px-1 py-0.5 text-center">
                           <input
                             type="checkbox"
-                            className="w-4 h-4"
+                            className="w-3 h-3"
                             checked={newRow[column] === "YES"}
                             onChange={(e) =>
                               handleNewRowChange(
@@ -392,10 +459,30 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
                       );
                     }
 
+                    if (column === "主键" || column === "唯一键") {
+                      // 新增行时，主键和唯一键显示为空 checkbox（可选）
+                      return (
+                        <td key={`new-${rowIndex}-${colIndex}`} className="px-1 py-0.5 text-center">
+                          <input
+                            type="checkbox"
+                            className="w-3 h-3"
+                            checked={newRow[column] === "YES"}
+                            onChange={(e) =>
+                              handleNewRowChange(
+                                rowIndex,
+                                column,
+                                e.target.checked ? "YES" : ""
+                              )
+                            }
+                          />
+                        </td>
+                      );
+                    }
+
                     return (
-                      <td key={`new-${rowIndex}-${colIndex}`} className="px-2 py-1">
+                      <td key={`new-${rowIndex}-${colIndex}`} className="px-1 py-0.5">
                         <Input
-                          className="h-8"
+                          className="h-5 text-xs rounded-none"
                           placeholder={column === "字段名" ? "必填" : ""}
                           value={newRow[column] || ""}
                           onChange={(e) =>
@@ -415,11 +502,11 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
       {generateAlterSQL.length > 0 && (
         <Alert>
           <AlertDescription>
-            <div className="text-xs font-medium text-gray-700 mb-2">
-              生成的 SQL ({generateAlterSQL.length} 条):
+            <div className="text-xs font-medium text-gray-700 mb-1">
+              SQL ({generateAlterSQL.length})
             </div>
             {generateAlterSQL.map((sql, i) => (
-              <div key={i} className="text-xs font-mono mb-1 text-gray-600">
+              <div key={i} className="text-xs font-mono mb-0.5 text-gray-600">
                 {sql}
               </div>
             ))}
