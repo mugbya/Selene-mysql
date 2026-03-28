@@ -158,11 +158,11 @@ export const TableViewTab = ({
             </Button>
           )}
           <Button variant="outline" onClick={handleRefresh}>刷新</Button>
-          <Button variant="default">新增数据</Button>
         </div>
       </div>
       <div className="flex-1 overflow-hidden">
         <LazyLoadDataTable
+          dbKey={dbkey}
           dbName={dbName}
           tableName={tableName}
           totalCount={totalCount}

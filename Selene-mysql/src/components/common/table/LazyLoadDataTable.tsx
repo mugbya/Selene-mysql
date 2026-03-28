@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ExecResult } from "@/types";
 import { ChevronLeft, ChevronRight, Plus, Save, Trash, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { executeSQL } from "@/db/msyql-client";
+import { toast } from "sonner";
 
 // 筛选条件类型
 type FilterCondition = {
@@ -13,9 +15,13 @@ interface EditableDataTableProps {
   loadData: (offset: number, limit: number) => Promise<ExecResult>;
   fetchAllData?: () => Promise<string[][]>;
   onFilterChange?: (filters: FilterCondition[]) => void;
+  onAddRow?: () => void;
+  onSave?: () => void;
+  onDelete?: () => void;
   totalCount: number;
   dbName: string;
   tableName: string;
+  dbKey: string | null;
   pageSize?: number;
 }
 
@@ -23,9 +29,13 @@ export default function LazyLoadDataTable({
   loadData,
   fetchAllData,
   onFilterChange,
+  onAddRow,
+  onSave,
+  onDelete,
   totalCount,
   dbName,
   tableName,
+  dbKey,
   pageSize = 50,
 }: EditableDataTableProps) {
   const [columns, setColumns] = useState<string[]>([]);
@@ -46,6 +56,15 @@ export default function LazyLoadDataTable({
   const [expandedCell, setExpandedCell] = useState<{ row: number; col: number } | null>(null);
   const [columnWidths, setColumnWidths] = useState<Record<number, { default: number; max: number }>>({});
   const [filterThRef, setFilterThRef] = useState<HTMLTableHeaderCellElement | null>(null);
+  // 主键信息
+  const [primaryKey, setPrimaryKey] = useState<string | null>(null);
+  const [primaryKeyColumnIndex, setPrimaryKeyColumnIndex] = useState<number | null>(null);
+  // 记录原始数据用于对比
+  const originalDataRef = useRef<string[][]>([]);
+  // 新增行的数据
+  const [newRows, setNewRows] = useState<string[][]>([]);
+  // 脏行标记（编辑过的行）
+  const [dirtyRows, setDirtyRows] = useState<Set<number>>(new Set());
 
   // 点击外部关闭筛选弹窗
   useEffect(() => {
@@ -222,8 +241,51 @@ export default function LazyLoadDataTable({
     }
   }, [filters]);
 
+  // 获取主键信息
+  useEffect(() => {
+    if (!dbKey || !dbName || !tableName) return;
+
+    const fetchPrimaryKey = async () => {
+      try {
+        const sql = `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '${dbName}' AND TABLE_NAME = '${tableName}' AND CONSTRAINT_NAME = 'PRIMARY'`;
+        const result = await executeSQL(dbKey, sql);
+        if (result.success && result.data && result.data.rows.length > 0) {
+          const pk = result.data.rows[0][0];
+          setPrimaryKey(pk);
+          console.log('[LazyLoadDataTable] Primary key:', pk);
+        }
+      } catch (err) {
+        console.error('[LazyLoadDataTable] Failed to get primary key:', err);
+      }
+    };
+
+    fetchPrimaryKey();
+  }, [dbKey, dbName, tableName]);
+
+  // 当 columns 变化时，查找主键列的索引
+  useEffect(() => {
+    if (primaryKey && columns.length > 0) {
+      const idx = columns.indexOf(primaryKey);
+      if (idx >= 0) {
+        setPrimaryKeyColumnIndex(idx);
+      }
+    }
+  }, [primaryKey, columns]);
+
+  // 存储原始数据用于对比
+  useEffect(() => {
+    originalDataRef.current = dataRows;
+  }, [dataRows]);
+
   const handleAddRow = () => {
+    if (!primaryKey || primaryKeyColumnIndex === null) {
+      toast.error('无法添加行：表没有主键', { closeButton: true });
+      return;
+    }
+
     const emptyRow = new Array(columns.length).fill("");
+    const newRowIndex = dataRows.length;
+    setNewRows((prev) => [...prev, emptyRow]);
     setDataRows((prev) => [...prev, emptyRow]);
   };
 
@@ -237,6 +299,11 @@ export default function LazyLoadDataTable({
   };
 
   const handleCellChange = (rowIdx: number, colIdx: number, value: string) => {
+    if (!primaryKey || primaryKeyColumnIndex === null) {
+      toast.error('无法编辑：表没有主键', { closeButton: true });
+      return;
+    }
+
     const key = `${rowIdx}-${colIdx}`;
     setEditState((prev) => ({ ...prev, [key]: value }));
 
@@ -244,30 +311,172 @@ export default function LazyLoadDataTable({
     newDataRows[rowIdx][colIdx] = value;
     setDataRows(newDataRows);
 
-    const sql = `UPDATE ${tableName} SET ${columns[colIdx]} = '${value}' WHERE id = ${rowIdx};`;
+    // 标记该行为脏行（已编辑）
+    setDirtyRows(prev => new Set(prev).add(rowIdx));
+
+    // 获取主键值
+    const pkValue = newDataRows[rowIdx][primaryKeyColumnIndex];
+    if (!pkValue) {
+      toast.error('无法编辑：主键值为空', { closeButton: true });
+      return;
+    }
+
+    // 转义值中的单引号
+    const escapedValue = value.replace(/'/g, "''");
+    const sql = `UPDATE \`${tableName}\` SET \`${columns[colIdx]}\` = '${escapedValue}' WHERE \`${primaryKey}\` = '${pkValue.replace(/'/g, "''")}'`;
 
     setSqlOutput((prev) => {
+      // 移除该行之前的 UPDATE 语句
       const filtered = prev.filter(
-        (s) =>
-          !s.includes(`WHERE id = ${rowIdx}`) ||
-          !s.includes(`${columns[colIdx]}`)
+        (s) => !s.includes(`WHERE \`${primaryKey}\` = '${pkValue}'`)
       );
       return [...filtered, sql];
     });
   };
 
-  const handleDelete = () => {
-    const deleteSqls = Array.from(selectedRows).map(
-      (rowIdx) => `DELETE FROM ${tableName} WHERE id = ${rowIdx};`
-    );
-    setSqlOutput((prev) => [...prev, ...deleteSqls]);
+  const handleDelete = async () => {
+    if (selectedRows.size === 0) {
+      toast.error('请选择要删除的行', { closeButton: true });
+      return;
+    }
 
-    setDataRows((prev) => prev.filter((_, idx) => !selectedRows.has(idx)));
+    // 区分新增行和已有行
+    const existingRowIndices = Array.from(selectedRows).filter(idx => idx < originalDataRef.current.length);
+    const newRowIndices = Array.from(selectedRows).filter(idx => idx >= originalDataRef.current.length);
+
+    // 如果有新增行被选中，直接从本地删除
+    if (newRowIndices.length > 0) {
+      setNewRows(prev => prev.filter((_, idx) => !newRowIndices.includes(idx + originalDataRef.current.length)));
+      setDataRows(prev => prev.filter((_, idx) => !selectedRows.has(idx)));
+    }
+
+    // 删除已有行需要执行 SQL
+    if (existingRowIndices.length > 0) {
+      if (!primaryKey || primaryKeyColumnIndex === null) {
+        toast.error('无法删除：表没有主键', { closeButton: true });
+        return;
+      }
+
+      // 收集要删除的行
+      const rowsToDelete = existingRowIndices.map(rowIdx => ({
+        rowIdx,
+        pkValue: dataRows[rowIdx]?.[primaryKeyColumnIndex]
+      })).filter(row => row.pkValue);
+
+      if (rowsToDelete.length === 0) {
+        toast.error('无法删除：主键值为空', { closeButton: true });
+        return;
+      }
+
+      // 执行删除
+      let successCount = 0;
+      for (const { pkValue } of rowsToDelete) {
+        const sql = `DELETE FROM \`${tableName}\` WHERE \`${primaryKey}\` = '${pkValue.replace(/'/g, "''")}'`;
+        console.log('[LazyLoadDataTable] Executing delete:', sql);
+        const result = await executeSQL(dbKey!, sql);
+        if (result.success) {
+          successCount++;
+        } else {
+          toast.error(`删除失败: ${result.message}`, { closeButton: true });
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`成功删除 ${successCount} 行`, { closeButton: true });
+        // 刷新数据
+        fetchData();
+      }
+    } else {
+      // 只是新增行被删除，直接刷新视图
+      setDataRows(prev => prev.filter((_, idx) => !selectedRows.has(idx)));
+    }
+
     setSelectedRows(new Set());
   };
 
-  const handleSave = () => {
-    alert("执行 SQL:\n" + sqlOutput.join("\n"));
+  const handleSave = async () => {
+    if (!dbKey) {
+      toast.error('数据库连接失败', { closeButton: true });
+      return;
+    }
+
+    if (newRows.length === 0 && dirtyRows.size === 0) {
+      toast.info('没有需要保存的更改', { closeButton: true });
+      return;
+    }
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    // 处理新增行
+    for (const row of newRows) {
+      // 检查是否有非空值
+      const hasValue = row.some(v => v && v.trim() !== '');
+      if (!hasValue) continue;
+
+      // 构建 INSERT 语句
+      const columnsList = columns.map(c => `\`${c}\``).join(', ');
+      const valuesList = row.map(v => {
+        const val = v || '';
+        return `'${val.replace(/'/g, "''")}'`;
+      }).join(', ');
+
+      const sql = `INSERT INTO \`${tableName}\` (${columnsList}) VALUES (${valuesList})`;
+      console.log('[LazyLoadDataTable] Executing insert:', sql);
+
+      const result = await executeSQL(dbKey, sql);
+      if (result.success) {
+        successCount++;
+      } else {
+        errorCount++;
+        toast.error(`插入失败: ${result.message}`, { closeButton: true });
+      }
+    }
+
+    // 处理更新（编辑过的行）
+    for (const rowIdx of dirtyRows) {
+      const row = dataRows[rowIdx];
+      const originalRow = originalDataRef.current[rowIdx];
+      if (!row || !originalRow) continue;
+
+      // 找出变更的列
+      const changes: string[] = [];
+      for (let i = 0; i < columns.length; i++) {
+        if (row[i] !== originalRow[i]) {
+          const colName = columns[i];
+          const newValue = row[i] || '';
+          changes.push(`\`${colName}\` = '${newValue.replace(/'/g, "''")}'`);
+        }
+      }
+
+      if (changes.length === 0) continue;
+
+      // 获取主键值
+      const pkValue = row[primaryKeyColumnIndex];
+      if (!pkValue) continue;
+
+      const sql = `UPDATE \`${tableName}\` SET ${changes.join(', ')} WHERE \`${primaryKey}\` = '${pkValue.replace(/'/g, "''")}'`;
+      console.log('[LazyLoadDataTable] Executing update:', sql);
+
+      const result = await executeSQL(dbKey, sql);
+      if (result.success) {
+        successCount++;
+      } else {
+        errorCount++;
+        toast.error(`更新失败: ${result.message}`, { closeButton: true });
+      }
+    }
+
+    if (successCount > 0) {
+      toast.success(`成功保存 ${successCount} 项更改`, { closeButton: true });
+      // 刷新数据
+      fetchData();
+    }
+
+    // 清空待保存的数据
+    setNewRows([]);
+    setDirtyRows(new Set());
+    setSqlOutput([]);
   };
 
   const maxPage = Math.floor((totalCount - 1) / pageSize);

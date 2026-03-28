@@ -36,7 +36,7 @@ export function TableTreeLeaf({
       // 查询失败，打开查询 tab 显示错误
       const errorMsg = String(result.message);
       openContentTab({
-        tabId: `${dbName}.${tableName}`,
+        tabId: `query_${dbName}.${tableName}`,
         title: `${tableName}`,
         tabType: "query",
         content: `-- 查询失败\n-- ${errorMsg}\n\n${text}`,
@@ -53,7 +53,7 @@ export function TableTreeLeaf({
     }
 
     openContentTab({
-      tabId: `${dbName}.${tableName}`,
+      tabId: `data_${dbName}.${tableName}`,
       title: `${tableName}`,
       tabType: "tableView",
       databaseName: `${dbName}`,
@@ -161,7 +161,7 @@ export function TableTreeLeaf({
     }
 
     openContentTab({
-      tabId: `${dbName}.${tableName}`,
+      tabId: `struct_${dbName}.${tableName}`,
       title: `设计${tableName}`,
       tabType: "tableStructure",
       databaseName: `${dbName}`,

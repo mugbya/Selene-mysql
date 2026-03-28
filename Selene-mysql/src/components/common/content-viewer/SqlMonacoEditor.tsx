@@ -233,11 +233,13 @@ export const SqlMonacoEditor: React.FC<ExecResultProps & { execResult?: ExecResu
         <div className="flex-1 min-h-0 border-t overflow-auto p-2 flex flex-col">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-600">执行结果</span>
-            <X
-              className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+            <span
+              className="text-gray-400 hover:text-gray-600 cursor-pointer"
               onClick={onClearResult}
               title="关闭结果"
-            />
+            >
+              <X className="w-4 h-4" />
+            </span>
           </div>
           <div className="flex-1 overflow-auto">
             <EditableResultTable result={execResult} onClose={onClearResult} />
