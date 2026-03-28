@@ -99,7 +99,7 @@ export default function ConnectionManager() {
     console.log("[ConnectionManager] 用户要展示的数据库列表:", conn.displayDatabases);
 
     const result = await fetchDatabases(conn.id)
-    console.log("数据库列表:", result);
+    console.log("读取连接下的所有数据库列表:", result);
     if (!result) {
       toast.error("连接失败");
       return;
@@ -123,7 +123,7 @@ export default function ConnectionManager() {
        key: conn.id,
        name: conn.name,
        isDataBase: true,
-       databases,
+       databases: realDatabases,
        displayDatabases,
      };
      openConnectionTab(connInfo);

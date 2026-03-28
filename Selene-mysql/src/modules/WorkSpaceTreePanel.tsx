@@ -30,10 +30,12 @@ function WorkSpaceTreePanel({
   tabId,
   dbKey,
   databases,
+  allDatabases,
 }: {
   tabId: string;
   dbKey: string | null;
   databases: string[];
+  allDatabases?: string[];
 }) {
   const renderCount = useRef(0);
 
@@ -42,6 +44,8 @@ function WorkSpaceTreePanel({
   }, []);
 
   console.log("[WorkSpaceTreePanel] databases:", databases);
+
+  const totalDatabases = allDatabases ?? databases;
 
   const [visibleTableDialogOpen, setVisibleTableDialogOpen] = useState(false);
   const [dialogTargetDB, setDialogTargetDB] = useState<DatabaseTree | null>(null);
@@ -75,9 +79,10 @@ function WorkSpaceTreePanel({
   const activeContent = contentTabs.find(t => t.tabId === activeContentId);
   const currentDatabase = activeContent?.dbKey === dbKey ? activeContent?.databaseName : null;
 
+  // 初始化 dbTrees，直接从 localStorage 读取 visibleTables
   const [dbTrees, setDBTrees] = useState<DatabaseTree[]>(() => {
-    const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
     return databases.map((name) => {
+      const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
       const key = `${connection?.key || tabId}_${name}`;
       const saved = localStorage.getItem(`visibleTables_${key}`);
       const visibleTables = saved ? JSON.parse(saved) : [];
@@ -88,6 +93,39 @@ function WorkSpaceTreePanel({
       };
     });
   });
+
+  // 当 databases 变化时，更新 dbTrees - 只更新数据库列表，不覆盖已有数据
+  useEffect(() => {
+    setDBTrees(prev => {
+      // 检查是否需要更新（是否有新的数据库加入）
+      const prevNames = prev.map(db => db.name);
+      const newDatabases = databases.filter(name => !prevNames.includes(name));
+
+      if (newDatabases.length === 0) {
+        // 没有新数据库，不需要更新
+        return prev;
+      }
+
+      // 只有新数据库才从 localStorage 读取
+      return databases.map((name) => {
+        const existing = prev.find(db => db.name === name);
+        if (existing) {
+          // 已存在的数据库保留原有数据
+          return existing;
+        }
+        // 新数据库从 localStorage 读取
+        const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
+        const key = `${connection?.key || tabId}_${name}`;
+        const saved = localStorage.getItem(`visibleTables_${key}`);
+        const visibleTables = saved ? JSON.parse(saved) : [];
+        return {
+          name,
+          expanded: false,
+          visibleTables,
+        };
+      });
+    });
+  }, [databases, tabId]);
   
   const toggleDatabaseExpand = (dbName: string) => {
     setDBTrees((prev) =>
@@ -174,14 +212,26 @@ function WorkSpaceTreePanel({
       prev.map((db) => {
         if (db.name !== dbName) return db;
 
-        // 获取当前的 visibleTables
+        // 优先使用内存中已有的 visibleTables
+        const existingVisibleTables = db.visibleTables;
         const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
         const key = `${connection?.key || tabId}_${dbName}`;
-        const saved = localStorage.getItem(`visibleTables_${key}`);
-        const currentVisibleTables: string[] = saved ? JSON.parse(saved) : [];
 
-        // 更新 visibleTables：删除的表移除，新建的要自动添加
-        const newVisibleTables = [...new Set([...currentVisibleTables.filter(t => tables.includes(t)), ...tables])];
+        // 只有当内存中没有 visibleTables 时，才从 localStorage 读取
+        let currentVisibleTables: string[];
+        if (existingVisibleTables && existingVisibleTables.length > 0) {
+          // 使用内存中的值，并过滤掉已经不存在的表
+          currentVisibleTables = existingVisibleTables.filter(t => tables.includes(t));
+        } else {
+          // 从 localStorage 读取
+          const saved = localStorage.getItem(`visibleTables_${key}`);
+          currentVisibleTables = saved ? JSON.parse(saved) : [];
+          // 过滤掉已经不存在的表
+          currentVisibleTables = currentVisibleTables.filter(t => tables.includes(t));
+        }
+
+        // 新表自动添加到 visibleTables（新建的表应该默认显示）
+        const newVisibleTables = [...new Set([...currentVisibleTables, ...tables])];
 
         // 保存到 localStorage
         localStorage.setItem(`visibleTables_${key}`, JSON.stringify(newVisibleTables));
@@ -493,33 +543,43 @@ function WorkSpaceTreePanel({
       )}
 
       <div className="w-full">
-        <div className="flex items-center gap-2 px-2 py-1">
-          <span className="text-sm font-medium flex-1">数据库列表</span>
-          <Filter 
-            className="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-700" 
-            onClick={() => {
-              const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
-              const currentDisplayDbs = connection?.displayDatabases || [];
-              setFilterDialogOpen(true);
-              if (dbKey) {
-                setFilterLoading(true);
-                fetchDatabases(dbKey).then(result => {
-                  const latestDatabases = result || [];
-                  setFilterDbList(latestDatabases);
-                  const newSelectedDbs = currentDisplayDbs.filter(db => latestDatabases.includes(db));
-                  if (latestDatabases.length !== currentDisplayDbs.length) {
-                    useConnectionStore.getState().updateConnectionDisplayDatabases(tabId, newSelectedDbs);
-                  }
-                  setFilterSelectedDBs(newSelectedDbs);
-                  setFilterLoading(false);
-                });
-              }
-            }}
-          />
-          <Plus 
-            className="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-700" 
-            onClick={() => setCreateDbDialogOpen(true)}
-          />
+        <div className="flex items-center justify-between px-2 py-1">
+          <div className="flex items-center">
+            <span className="text-sm font-medium">数据库列表</span>
+            {/* 显示筛选数量/总数 */}
+            {databases.length > 0 && (
+              <span className="text-xs text-gray-400 ml-1">
+                ({databases.length}/{totalDatabases.length})
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            <Filter
+              className="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-700"
+              onClick={() => {
+                const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
+                const currentDisplayDbs = connection?.displayDatabases || [];
+                setFilterDialogOpen(true);
+                if (dbKey) {
+                  setFilterLoading(true);
+                  fetchDatabases(dbKey).then(result => {
+                    const latestDatabases = result || [];
+                    setFilterDbList(latestDatabases);
+                    const newSelectedDbs = currentDisplayDbs.filter(db => latestDatabases.includes(db));
+                    if (latestDatabases.length !== currentDisplayDbs.length) {
+                      useConnectionStore.getState().updateConnectionDisplayDatabases(tabId, newSelectedDbs);
+                    }
+                    setFilterSelectedDBs(newSelectedDbs);
+                    setFilterLoading(false);
+                  });
+                }
+              }}
+            />
+            <Plus
+              className="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-700"
+              onClick={() => setCreateDbDialogOpen(true)}
+            />
+          </div>
         </div>
         <ul className="px-2 text-sm space-y-1">
         {dbTrees.map((db) => (
@@ -562,11 +622,16 @@ function WorkSpaceTreePanel({
                       <div className="flex items-center gap-1">
                         <Table className="w-4 h-4" />
                         <span>表</span>
-                        {db.tables && db.tables.length > 0 && (
-                          <span className="text-xs text-gray-400">
-                            ({db.visibleTables?.length || 0}/{db.tables.length})
-                          </span>
-                        )}
+                        {db.tables && db.tables.length > 0 && (() => {
+                          const displayedCount = (db.visibleTables?.length === 0 || !db.visibleTables)
+                            ? db.tables.length
+                            : db.tables.filter(t => (db.visibleTables || []).includes(t)).length;
+                          return (
+                            <span className="text-xs text-gray-400">
+                              ({displayedCount}/{db.tables.length})
+                            </span>
+                          );
+                        })()}
                       </div>
                     </ContextMenuTrigger>
                     <ContextMenuContent className="w-48">

@@ -11,7 +11,7 @@ import WorkSpaceTreePanel from "./WorkSpaceTreePanel";
 import { ContentTabManager } from "./ContentTabManager";
 import { useConnectionStore } from "@/store/useConnectionStore";
 
-export default function DataBaseView({ tabId, dbKey, databases }: { tabId: string, dbKey: string | null, databases: string[] }) {
+export default function DataBaseView({ tabId, dbKey, databases, allDatabases }: { tabId: string, dbKey: string | null, databases: string[], allDatabases?: string[] }) {
 
   const showRightPanel = usePanelsStore((s) => s.showRightPanel);
 
@@ -32,8 +32,9 @@ export default function DataBaseView({ tabId, dbKey, databases }: { tabId: strin
             <div className="flex flex-col h-full">
               <WorkSpaceTreePanel
                 tabId={tabId}
-                databases = {databases}
-                dbKey = {dbKey}
+                databases={databases}
+                allDatabases={allDatabases ?? databases}
+                dbKey={dbKey}
               />
             </div>
           </Panel>
