@@ -86,10 +86,13 @@ function WorkSpaceTreePanel({
       const key = `${connection?.key || tabId}_${name}`;
       const saved = localStorage.getItem(`visibleTables_${key}`);
       const visibleTables = saved ? JSON.parse(saved) : [];
+      const savedTablesCount = localStorage.getItem(`tablesCount_${key}`);
+      const tablesCount = savedTablesCount ? parseInt(savedTablesCount, 10) : undefined;
       return {
         name,
         expanded: false,
         visibleTables,
+        tablesCount,
       };
     });
   });
@@ -118,10 +121,13 @@ function WorkSpaceTreePanel({
         const key = `${connection?.key || tabId}_${name}`;
         const saved = localStorage.getItem(`visibleTables_${key}`);
         const visibleTables = saved ? JSON.parse(saved) : [];
+        const savedTablesCount = localStorage.getItem(`tablesCount_${key}`);
+        const tablesCount = savedTablesCount ? parseInt(savedTablesCount, 10) : undefined;
         return {
           name,
           expanded: false,
           visibleTables,
+          tablesCount,
         };
       });
     });
@@ -208,14 +214,17 @@ function WorkSpaceTreePanel({
 
     if (!tables) return;
 
+    // 缓存表数量到 localStorage
+    const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
+    const key = `${connection?.key || tabId}_${dbName}`;
+    localStorage.setItem(`tablesCount_${key}`, String(tables.length));
+
     setDBTrees((prev) =>
       prev.map((db) => {
         if (db.name !== dbName) return db;
 
         // 优先使用内存中已有的 visibleTables
         const existingVisibleTables = db.visibleTables;
-        const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
-        const key = `${connection?.key || tabId}_${dbName}`;
 
         // 只有当内存中没有 visibleTables 时，才从 localStorage 读取
         let currentVisibleTables: string[];
@@ -230,13 +239,10 @@ function WorkSpaceTreePanel({
           currentVisibleTables = currentVisibleTables.filter(t => tables.includes(t));
         }
 
-        // 新表自动添加到 visibleTables（新建的表应该默认显示）
-        const newVisibleTables = [...new Set([...currentVisibleTables, ...tables])];
+        // 更新 localStorage
+        localStorage.setItem(`visibleTables_${key}`, JSON.stringify(currentVisibleTables));
 
-        // 保存到 localStorage
-        localStorage.setItem(`visibleTables_${key}`, JSON.stringify(newVisibleTables));
-
-        return { ...db, tables, visibleTables: newVisibleTables };
+        return { ...db, tables, visibleTables: currentVisibleTables, tablesCount: tables.length };
       })
     );
   }, [dbKey, tabId]);
@@ -622,7 +628,8 @@ function WorkSpaceTreePanel({
                       <div className="flex items-center gap-1">
                         <Table className="w-4 h-4" />
                         <span>表</span>
-                        {db.tables && db.tables.length > 0 && (() => {
+                        {/* 有表数据时显示已筛选/总数，或者有缓存的总表数时显示 */}
+                        {db.tables && db.tables.length > 0 ? (() => {
                           const displayedCount = (db.visibleTables?.length === 0 || !db.visibleTables)
                             ? db.tables.length
                             : db.tables.filter(t => (db.visibleTables || []).includes(t)).length;
@@ -631,7 +638,11 @@ function WorkSpaceTreePanel({
                               ({displayedCount}/{db.tables.length})
                             </span>
                           );
-                        })()}
+                        })() : db.tablesCount ? (
+                          <span className="text-xs text-gray-400">
+                            ({db.visibleTables?.length || 0}/{db.tablesCount})
+                          </span>
+                        ) : null}
                       </div>
                     </ContextMenuTrigger>
                     <ContextMenuContent className="w-48">
@@ -657,7 +668,21 @@ function WorkSpaceTreePanel({
                   if (dbKey) {
                     useConnectionStore.getState().updateCurrentDb(dbKey, db.name);
                   }
-                  if (!db.tables) loadTables(db.name);
+                  // 如果还没有表数据，先从 localStorage 加载 visibleTables 和 tablesCount
+                  if (!db.tables) {
+                    const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
+                    const key = `${connection?.key || tabId}_${db.name}`;
+                    const saved = localStorage.getItem(`visibleTables_${key}`);
+                    const visibleTables = saved ? JSON.parse(saved) : [];
+                    const savedTablesCount = localStorage.getItem(`tablesCount_${key}`);
+                    const tablesCount = savedTablesCount ? parseInt(savedTablesCount, 10) : undefined;
+                    // 先设置 visibleTables 和 tablesCount，这样可以在加载表之前就显示数量
+                    setDBTrees(prev => prev.map(d =>
+                      d.name === db.name ? { ...d, visibleTables, tablesCount } : d
+                    ));
+                    // 然后异步加载表
+                    loadTables(db.name);
+                  }
                 }}
               >
                 

@@ -31,6 +31,7 @@ export type DatabaseTree = {
   functions?: string[];
   events?: string[];
   visibleTables?: string[];
+  tablesCount?: number; // 缓存的表总数
 };
 
 export type TableTree = {
