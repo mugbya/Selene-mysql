@@ -7,6 +7,7 @@ import { executeSQL } from "@/db/msyql-client";
 import { useConnectionStore } from "@/store/useConnectionStore";
 import { ExecResult, ExecResultProps } from "@/types";
 import { EditableResultTable } from "@/modules/ExecResultTable";
+import { X } from "lucide-react";
 
 // export default function SqlMonacoEditor({dbKey}: { dbKey: string | null }) {
 export const SqlMonacoEditor: React.FC<ExecResultProps & { execResult?: ExecResult; onClearResult?: () => void; onSave?: () => void; onSaveAs?: () => void; onContentChange?: (content: string) => void }> = ({
@@ -229,8 +230,18 @@ export const SqlMonacoEditor: React.FC<ExecResultProps & { execResult?: ExecResu
 
       {/* 结果区域：仅在有执行结果时展示 */}
       {execResult && (
-        <div className="flex-1 min-h-0 border-t overflow-auto p-2">
-          <EditableResultTable result={execResult} onClose={onClearResult} />
+        <div className="flex-1 min-h-0 border-t overflow-auto p-2 flex flex-col">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-600">执行结果</span>
+            <X
+              className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+              onClick={onClearResult}
+              title="关闭结果"
+            />
+          </div>
+          <div className="flex-1 overflow-auto">
+            <EditableResultTable result={execResult} onClose={onClearResult} />
+          </div>
         </div>
       )}
     </div>
