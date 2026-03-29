@@ -58,6 +58,7 @@ export const TreeNode: React.FC<TreeNodeProps> = ({
   onExpand,
   children,
 }) => {
+  // 使用 defaultExpanded 作为初始值，后续状态由内部管理
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   const handleToggle = () => {

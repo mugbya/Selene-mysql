@@ -2,12 +2,9 @@ import Database from "@tauri-apps/plugin-sql";
 
 export type ConnectionType = 'mysql' | 'pgsql' | 'sqlite';
 
-
-
 export interface DBConnectionPersisted {
   id: string; // 连接唯一值，相当于key
   name: string;
-  // type: ConnectionType; // 可扩展
   type: string; // 可扩展
   db_type: string; // 可扩展
   host: string;
@@ -16,7 +13,8 @@ export interface DBConnectionPersisted {
   password: string;
   database?: string; // 用户填写的连接的数据库
   databases: string[]; // 连接下的所有数据库列表
-  displayDatabases?: string[]  | null; // 连接后 用户选择要展示的数据库列表
+  displayDatabases?: string[] | null; // 连接后 用户选择要展示的数据库列表
+  parentId?: string | null; // 父节点 ID，null 表示根节点
 }
 
 export interface DBConnectionRuntime extends DBConnectionPersisted {

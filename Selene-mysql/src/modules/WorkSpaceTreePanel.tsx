@@ -58,8 +58,21 @@ function WorkSpaceTreePanel({
   const [filterLoading, setFilterLoading] = useState(false);
   const [filterSearchKeyword, setFilterSearchKeyword] = useState("");
 
+  // 从 localStorage 加载查询列表展开状态
+  const loadQueriesExpanded = (): boolean => {
+    const key = `dbTree_queriesExpanded_${tabId}`;
+    const saved = localStorage.getItem(key);
+    return saved === 'true';
+  };
+
+  // 保存查询列表展开状态到 localStorage
+  const saveQueriesExpanded = (expanded: boolean) => {
+    const key = `dbTree_queriesExpanded_${tabId}`;
+    localStorage.setItem(key, String(expanded));
+  };
+
   // 保存的查询相关状态
-  const [queriesExpanded, setQueriesExpanded] = useState(false);
+  const [queriesExpanded, setQueriesExpanded] = useState(loadQueriesExpanded);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [renameTargetQuery, setRenameTargetQuery] = useState<{ id: string; name: string } | null>(null);
   const [renameInput, setRenameInput] = useState("");
@@ -79,7 +92,20 @@ function WorkSpaceTreePanel({
   const activeContent = contentTabs.find(t => t.tabId === activeContentId);
   const currentDatabase = activeContent?.dbKey === dbKey ? activeContent?.databaseName : null;
 
-  // 初始化 dbTrees，直接从 localStorage 读取 visibleTables
+  // 从 localStorage 加载展开状态
+  const loadExpandedState = (dbName: string): boolean => {
+    const key = `dbTree_expanded_${tabId}_${dbName}`;
+    const saved = localStorage.getItem(key);
+    return saved === 'true';
+  };
+
+  // 保存展开状态到 localStorage
+  const saveExpandedState = (dbName: string, expanded: boolean) => {
+    const key = `dbTree_expanded_${tabId}_${dbName}`;
+    localStorage.setItem(key, String(expanded));
+  };
+
+  // 初始化 dbTrees，直接从 localStorage 读取 visibleTables 和展开状态
   const [dbTrees, setDBTrees] = useState<DatabaseTree[]>(() => {
     return databases.map((name) => {
       const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
@@ -88,9 +114,11 @@ function WorkSpaceTreePanel({
       const visibleTables = saved ? JSON.parse(saved) : [];
       const savedTablesCount = localStorage.getItem(`tablesCount_${key}`);
       const tablesCount = savedTablesCount ? parseInt(savedTablesCount, 10) : undefined;
+      // 从 localStorage 加载展开状态
+      const expanded = loadExpandedState(name);
       return {
         name,
-        expanded: false,
+        expanded,
         visibleTables,
         tablesCount,
       };
@@ -123,9 +151,11 @@ function WorkSpaceTreePanel({
         const visibleTables = saved ? JSON.parse(saved) : [];
         const savedTablesCount = localStorage.getItem(`tablesCount_${key}`);
         const tablesCount = savedTablesCount ? parseInt(savedTablesCount, 10) : undefined;
+        // 从 localStorage 加载展开状态
+        const expanded = loadExpandedState(name);
         return {
           name,
-          expanded: false,
+          expanded,
           visibleTables,
           tablesCount,
         };
@@ -134,11 +164,17 @@ function WorkSpaceTreePanel({
   }, [databases, tabId]);
   
   const toggleDatabaseExpand = (dbName: string) => {
-    setDBTrees((prev) =>
-      prev.map((db) =>
+    setDBTrees((prev) => {
+      const updated = prev.map((db) =>
         db.name === dbName ? { ...db, expanded: !db.expanded } : db
-      )
-    );
+      );
+      // 保存展开状态到 localStorage
+      const newState = updated.find(db => db.name === dbName);
+      if (newState) {
+        saveExpandedState(dbName, newState.expanded);
+      }
+      return updated;
+    });
   };
 
   const openQueryTab = async (dbName: string) => {
@@ -333,14 +369,16 @@ function WorkSpaceTreePanel({
       // 更新 store 中的 displayDatabases
       useConnectionStore.getState().updateConnectionDisplayDatabases(tabId, displayDbs);
 
-      // 更新本地 dbTrees 状态
+      // 更新本地 dbTrees 状态（保留展开状态）
       setDBTrees(displayDbs.map((name) => {
         const key = `${connection?.key || tabId}_${name}`;
         const saved = localStorage.getItem(`visibleTables_${key}`);
         const visibleTables = saved ? JSON.parse(saved) : [];
+        // 保留展开状态
+        const expanded = loadExpandedState(name);
         return {
           name,
-          expanded: false,
+          expanded,
           visibleTables,
         };
       }));
@@ -707,7 +745,9 @@ function WorkSpaceTreePanel({
                     className="flex items-center gap-1 cursor-pointer w-full"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setQueriesExpanded(!queriesExpanded);
+                      const newState = !queriesExpanded;
+                      setQueriesExpanded(newState);
+                      saveQueriesExpanded(newState);
                     }}
                   >
                     <TerminalSquare className="w-4 h-4" />

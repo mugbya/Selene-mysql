@@ -31,19 +31,41 @@ const ConnectionTestView = ({ conn }: Props) => {
     }
   };
 
+  const getStatusIcon = () => {
+    switch (status) {
+      case "loading":
+        return <Loader2 className="w-4 h-4 animate-spin text-blue-400" />;
+      case "success":
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case "error":
+        return <XCircle className="w-4 h-4 text-red-500" />;
+      default:
+        return <Zap className="w-4 h-4 text-blue-500" />;
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (status) {
+      case "success":
+        return "hover:bg-green-100";
+      case "error":
+        return "hover:bg-red-100";
+      default:
+        return "hover:bg-blue-100";
+    }
+  };
+
   return (
-    <>
-      <button
-        onClick={() => handleTestConnect(conn, setStatus)}
-        className="p-1 hover:bg-blue-100 rounded text-blue-600"
-        title="测试连接"
-      >
-        {status === "loading" && <Loader2 className="w-3 h-3 animate-spin" />}
-        {status === "success" && <CheckCircle className="w-3 h-3" />}
-        {status === "error" && <XCircle className="w-3 h-3" />}
-        {status === "idle" && <Zap className="w-3 h-3" />}
-      </button>
-    </>
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        handleTestConnect(conn, setStatus);
+      }}
+      className={`p-0.5 rounded cursor-pointer ${getStatusColor()}`}
+      title="测试连接"
+    >
+      {getStatusIcon()}
+    </div>
   );
 };
 
