@@ -1,4 +1,4 @@
-import { Database, Settings,  } from 'lucide-react';
+import { Database, Settings } from 'lucide-react';
 import { MenuPanelProps } from '../types';
 import { useConnectionStore } from '@/store/useConnectionStore';
 
@@ -10,16 +10,14 @@ export default function MenuPanel({ openSettings, toggleLeft }: MenuPanelProps) 
     return (
         <>
             {/* <div className="p-0 space-y-2 border-r "> */}
-            <div className="p-0 space-y-4 border-r">
-                <button className="bg-blue-500 text-white px-3 py-1 rounded"
-                    // onClick={() => setView('connection-manager')}
-                    // onClick={toggleConnectionView}
+            <div className="p-2 space-y-1 border-r">
+                <div
                     onClick={toggleConnectionButton}
+                    className="p-1.5 rounded cursor-pointer hover:bg-gray-100 text-blue-600"
+                    title="数据库连接"
                 >
                     <Database className="w-6 h-6" />
-                </button>
-                {/* <MyDatabaseDialog></MyDatabaseDialog> */}
-
+                </div>
 
                 {/* <button
                     // onClick={() => setShowLeftPanel(true)}
@@ -30,13 +28,13 @@ export default function MenuPanel({ openSettings, toggleLeft }: MenuPanelProps) 
                     <Folder className="w-6 h-6" />
                 </button> */}
 
-                <button
+                <div
                     onClick={openSettings}
-                    className="flex items-center gap-2  px-4 py-2 rounded border-2"
+                    className="p-1.5 rounded cursor-pointer hover:bg-gray-100 text-gray-600"
+                    title="设置"
                 >
                     <Settings className="w-6 h-6" />
-                    {/*设置*/}
-                </button>
+                </div>
             </div>
 
 
