@@ -255,15 +255,15 @@ export default function ConnectionManager() {
   };
 
   // 提交连接表单
-  const handleSubmit = (conn: DBConnectionPersisted) => {
-    const parentId = localStorage.getItem('pending-connection-parent') || null;
+  const handleSubmit = (conn: DBConnectionPersisted & { parentId?: string | null }) => {
+    const pendingParentId = localStorage.getItem('pending-connection-parent') || null;
     localStorage.removeItem('pending-connection-parent');
 
     if (editingNodeId) {
-      // 编辑模式：更新现有节点
+      // 编辑模式：更新现有节点（包括父文件夹）
       const updated = nodes.map(n =>
         n.id === editingNodeId && n.type === 'connection'
-          ? { ...n, name: conn.name, data: { ...conn, id: editingNodeId } }
+          ? { ...n, name: conn.name, parentId: conn.parentId ?? null, data: { ...conn, id: editingNodeId } }
           : n
       );
       setNodes(updated);
@@ -284,7 +284,7 @@ export default function ConnectionManager() {
         id: connId,
         name: conn.name,
         type: 'connection',
-        parentId: parentId || null,
+        parentId: pendingParentId || conn.parentId || null,
         data: { ...conn, id: connId }
       };
       const updated = [...nodes, newNode];
@@ -551,6 +551,9 @@ export default function ConnectionManager() {
           onClose={() => { setDialogOpen(false); setEditing(null); setEditingNodeId(null); }}
           onSubmit={handleSubmit}
           defaultValue={editing || undefined}
+          folders={nodes.filter(n => n.type === 'folder')}
+          currentParentId={editing?.parentId}
+          editingNodeId={editingNodeId}
         />
       )}
     </div>
