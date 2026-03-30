@@ -109,7 +109,9 @@ export const TableViewTab = ({
 
     sql += ` order by id desc limit ${limit} offset ${offset};`;
     console.log('[TableViewTab] loadData sql:', sql);
+    console.log('[TableViewTab] loadData 开始执行...');
     const result = await executeSQL(dbkey, sql);
+    console.log('[TableViewTab] loadData result:', JSON.stringify(result));
     if (!result.success) {
       toast.error(`查询失败 ${result.message}`, { closeButton: true });
       throw new Error(`查询失败 ${result.message}`);
@@ -118,6 +120,7 @@ export const TableViewTab = ({
       toast.error(`查询未返回数据`, { closeButton: true });
       throw new Error('查询未返回数据');
     }
+    console.log('[TableViewTab] loadData 返回数据:', result.data);
     return result.data;
   };
 

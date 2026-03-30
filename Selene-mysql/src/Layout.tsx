@@ -21,7 +21,7 @@ export default function Layout() {
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground ">
-      <Header toggleLeft={toggleLeftPanel} toggleRight={toggleRightPanel} />
+      {/* <Header toggleLeft={toggleLeftPanel} toggleRight={toggleRightPanel} /> */}
 
       {/* 消息提示 */}
       <Toaster position="top-center" richColors duration={30000} closeButton />

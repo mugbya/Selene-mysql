@@ -37,6 +37,7 @@ pub struct QueryResult {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum DatabaseError {
     ConnectionFailed(String),
     QueryFailed(String),
@@ -194,19 +195,34 @@ impl DatabaseManager {
         // println!("-----------");
         // println!("{:#?}", query);
         // println!("{:#?}", rows);
-        // println!("-----------");    
+        // println!("-----------");
+
+        // 先获取列信息（即使没有数据也要返回列结构）
+        let columns: Vec<String> = if !rows.is_empty() {
+            rows[0].columns()
+                .iter()
+                .map(|col| col.name().to_string())
+                .collect()
+        } else {
+            // 空结果集时，尝试使用 DESCRIBE 来获取列信息
+            let describe_query = format!("DESCRIBE `{}`", table_name_from_query(query_clean));
+            match sqlx::query(&describe_query).fetch_all(pool).await {
+                Ok(desc_rows) => {
+                    desc_rows.iter()
+                        .filter_map(|row| row.try_get::<String, _>(0).ok())
+                        .collect()
+                },
+                Err(_) => vec![]
+            }
+        };
+
         if rows.is_empty() {
             return Ok(QueryResult {
-                columns: vec![],
+                columns,
                 rows: vec![],
                 rows_affected: Some(0),
             });
         }
-
-        let columns: Vec<String> = rows[0].columns()
-            .iter()
-            .map(|col| col.name().to_string())
-            .collect();
 
         let mut result_rows = Vec::new();
         for row in rows {
@@ -316,7 +332,7 @@ impl DatabaseManager {
                     let bytes: Result<Option<Vec<u8>>, _> = row.try_get(index);
                     match bytes {
                         Ok(opt) => Ok(match opt {
-                            Some(b) => serde_json::Value::String("<json>".to_string()),
+                            Some(_b) => serde_json::Value::String("<json>".to_string()),
                             None => serde_json::Value::Null,
                         }),
                         Err(_) => Ok(serde_json::Value::Null),
@@ -589,4 +605,36 @@ impl DatabaseManager {
     pub fn get_connection_configs(&self) -> &HashMap<String, ConnectionConfig> {
         &self.configs
     }
+}
+
+// 辅助函数：从 SELECT 查询中提取表名
+fn table_name_from_query(query: &str) -> String {
+    // 简单解析 SELECT * FROM `table_name` 格式
+    let query_upper = query.to_uppercase();
+    if let Some(from_pos) = query_upper.find("FROM") {
+        let after_from = &query[from_pos + 4..];
+        // 提取表名（处理 `table_name` 格式）
+        let trimmed = after_from.trim();
+        if trimmed.starts_with('`') {
+            if let Some(end_pos) = trimmed[1..].find('`') {
+                return trimmed[1..end_pos + 1].to_string();
+            }
+        }
+        // 处理 table.db 格式
+        if let Some(dot_pos) = trimmed.find('.') {
+            let table_part = &trimmed[..dot_pos];
+            if let Some(dot_pos2) = table_part.rfind('.') {
+                return table_part[dot_pos2 + 1..].to_string();
+            }
+            return table_part.to_string();
+        }
+        // 处理空格分隔的表名
+        for (i, c) in trimmed.char_indices() {
+            if c.is_whitespace() {
+                return trimmed[..i].to_string();
+            }
+        }
+        return trimmed.to_string();
+    }
+    String::new()
 }

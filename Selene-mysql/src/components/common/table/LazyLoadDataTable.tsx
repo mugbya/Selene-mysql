@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { ExecResult } from "@/types";
 import { ChevronLeft, ChevronRight, Plus, Save, Trash, Filter } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { executeSQL } from "@/db/msyql-client";
 import { toast } from "sonner";
 
@@ -203,9 +202,12 @@ export default function LazyLoadDataTable({
   const offset = page * pageSize;
 
   const fetchData = async () => {
+    console.log('[LazyLoadDataTable] fetchData 开始');
     setLoading(true);
     const result = await loadData(offset, pageSize);
+    console.log('[LazyLoadDataTable] fetchData result:', result);
     if (result) {
+      console.log('[LazyLoadDataTable] fetchData 设置 columns:', result.columns, 'rows:', result.rows.length);
       setColumns(result.columns);
       setDataRows(result.rows);
     }
@@ -213,6 +215,7 @@ export default function LazyLoadDataTable({
   };
 
   useEffect(() => {
+    console.log('[LazyLoadDataTable] useEffect - dbName:', dbName, 'tableName:', tableName, 'page:', page);
     fetchData();
   }, [dbName, tableName, page]);
 
@@ -247,12 +250,26 @@ export default function LazyLoadDataTable({
 
     const fetchPrimaryKey = async () => {
       try {
-        const sql = `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '${dbName}' AND TABLE_NAME = '${tableName}' AND CONSTRAINT_NAME = 'PRIMARY'`;
+        // 使用反引号转义数据库名和表名
+        const sql = `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '${dbName.replace(/'/g, "''")}' AND TABLE_NAME = '${tableName.replace(/'/g, "''")}' AND CONSTRAINT_NAME = 'PRIMARY'`;
+        console.log('[LazyLoadDataTable] 查询主键 SQL:', sql);
         const result = await executeSQL(dbKey, sql);
+        console.log('[LazyLoadDataTable] 主键查询结果:', result);
         if (result.success && result.data && result.data.rows.length > 0) {
           const pk = result.data.rows[0][0];
+          console.log('[LazyLoadDataTable] 设置主键:', pk, '当前 columns:', columns);
           setPrimaryKey(pk);
-          console.log('[LazyLoadDataTable] Primary key:', pk);
+
+          // 如果 columns 已经加载，立即设置主键列索引
+          if (columns.length > 0) {
+            const idx = columns.indexOf(pk);
+            if (idx >= 0) {
+              console.log('[LazyLoadDataTable] 直接设置主键列索引:', idx);
+              setPrimaryKeyColumnIndex(idx);
+            }
+          }
+        } else {
+          console.log('[LazyLoadDataTable] 未找到主键');
         }
       } catch (err) {
         console.error('[LazyLoadDataTable] Failed to get primary key:', err);
@@ -264,13 +281,35 @@ export default function LazyLoadDataTable({
 
   // 当 columns 变化时，查找主键列的索引
   useEffect(() => {
+    console.log('[LazyLoadDataTable] columns 更新:', columns, 'primaryKey:', primaryKey, 'columns.length:', columns.length);
+    // 延迟一点执行，确保 primaryKey 已经更新
     if (primaryKey && columns.length > 0) {
       const idx = columns.indexOf(primaryKey);
+      console.log('[LazyLoadDataTable] 直接查找主键列索引:', idx);
       if (idx >= 0) {
         setPrimaryKeyColumnIndex(idx);
+      } else {
+        // 可能是大小写问题，尝试不区分大小写匹配
+        const lowerIdx = columns.findIndex(col => col.toLowerCase() === primaryKey.toLowerCase());
+        console.log('[LazyLoadDataTable] 不区分大小写查找:', lowerIdx);
+        if (lowerIdx >= 0) {
+          setPrimaryKeyColumnIndex(lowerIdx);
+        }
       }
     }
   }, [primaryKey, columns]);
+
+  // 单独监听 columns 更新，确保设置主键索引
+  useEffect(() => {
+    if (!primaryKey) return;
+    if (columns.length === 0) return;
+
+    const idx = columns.indexOf(primaryKey);
+    if (idx >= 0 && primaryKeyColumnIndex !== idx) {
+      console.log('[LazyLoadDataTable] 通过 columns 更新设置主键索引:', idx);
+      setPrimaryKeyColumnIndex(idx);
+    }
+  }, [columns, primaryKey]);
 
   // 存储原始数据用于对比
   useEffect(() => {
@@ -278,12 +317,25 @@ export default function LazyLoadDataTable({
   }, [dataRows]);
 
   const handleAddRow = () => {
-    if (!primaryKey || primaryKeyColumnIndex === null) {
-      toast.error('无法添加行：表没有主键', { closeButton: true });
+    console.log('[LazyLoadDataTable] handleAddRow - columns:', columns, 'columns.length:', columns.length, 'loading:', loading);
+    // 如果数据还没加载完成或者 columns 为空，不允许添加
+    if (loading) {
+      toast.warning('正在加载数据，请稍后...');
+      return;
+    }
+    if (columns.length === 0) {
+      toast.warning('数据未加载完成，请稍后再试');
+      return;
+    }
+
+    // 检查主键是否已获取
+    if (!primaryKey) {
+      toast.warning('正在获取主键信息，请稍后...');
       return;
     }
 
     const emptyRow = new Array(columns.length).fill("");
+    console.log('[LazyLoadDataTable] 创建空行，长度:', emptyRow.length);
     const newRowIndex = dataRows.length;
     setNewRows((prev) => [...prev, emptyRow]);
     setDataRows((prev) => [...prev, emptyRow]);
@@ -300,7 +352,7 @@ export default function LazyLoadDataTable({
 
   const handleCellChange = (rowIdx: number, colIdx: number, value: string) => {
     if (!primaryKey || primaryKeyColumnIndex === null) {
-      toast.error('无法编辑：表没有主键', { closeButton: true });
+      toast.error('无法编辑：表没有主键');
       return;
     }
 
@@ -317,7 +369,7 @@ export default function LazyLoadDataTable({
     // 获取主键值
     const pkValue = newDataRows[rowIdx][primaryKeyColumnIndex];
     if (!pkValue) {
-      toast.error('无法编辑：主键值为空', { closeButton: true });
+      toast.error('无法编辑：主键值为空');
       return;
     }
 
@@ -336,7 +388,7 @@ export default function LazyLoadDataTable({
 
   const handleDelete = async () => {
     if (selectedRows.size === 0) {
-      toast.error('请选择要删除的行', { closeButton: true });
+      toast.error('请选择要删除的行');
       return;
     }
 
@@ -353,7 +405,7 @@ export default function LazyLoadDataTable({
     // 删除已有行需要执行 SQL
     if (existingRowIndices.length > 0) {
       if (!primaryKey || primaryKeyColumnIndex === null) {
-        toast.error('无法删除：表没有主键', { closeButton: true });
+        toast.error('无法删除：表没有主键');
         return;
       }
 
@@ -364,7 +416,7 @@ export default function LazyLoadDataTable({
       })).filter(row => row.pkValue);
 
       if (rowsToDelete.length === 0) {
-        toast.error('无法删除：主键值为空', { closeButton: true });
+        toast.error('无法删除：主键值为空');
         return;
       }
 
@@ -377,12 +429,12 @@ export default function LazyLoadDataTable({
         if (result.success) {
           successCount++;
         } else {
-          toast.error(`删除失败: ${result.message}`, { closeButton: true });
+          toast.error(`删除失败: ${result.message}`);
         }
       }
 
       if (successCount > 0) {
-        toast.success(`成功删除 ${successCount} 行`, { closeButton: true });
+        toast.success(`成功删除 ${successCount} 行`);
         // 刷新数据
         fetchData();
       }
@@ -396,12 +448,12 @@ export default function LazyLoadDataTable({
 
   const handleSave = async () => {
     if (!dbKey) {
-      toast.error('数据库连接失败', { closeButton: true });
+      toast.error('数据库连接失败');
       return;
     }
 
     if (newRows.length === 0 && dirtyRows.size === 0) {
-      toast.info('没有需要保存的更改', { closeButton: true });
+      toast.info('没有需要保存的更改');
       return;
     }
 
@@ -429,7 +481,7 @@ export default function LazyLoadDataTable({
         successCount++;
       } else {
         errorCount++;
-        toast.error(`插入失败: ${result.message}`, { closeButton: true });
+        toast.error(`插入失败: ${result.message}`);
       }
     }
 
@@ -463,12 +515,12 @@ export default function LazyLoadDataTable({
         successCount++;
       } else {
         errorCount++;
-        toast.error(`更新失败: ${result.message}`, { closeButton: true });
+        toast.error(`更新失败: ${result.message}`);
       }
     }
 
     if (successCount > 0) {
-      toast.success(`成功保存 ${successCount} 项更改`, { closeButton: true });
+      toast.success(`成功保存 ${successCount} 项更改`);
       // 刷新数据
       fetchData();
     }
@@ -486,27 +538,23 @@ export default function LazyLoadDataTable({
       {/* 功能栏 */}
       <div className="flex items-center justify-between px-2 py-1 border-b bg-muted">
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={page === 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
+          <div
+            className={`p-1 rounded cursor-pointer ${page === 0 ? 'opacity-50' : 'hover:bg-accent'}`}
+            onClick={() => page > 0 && setPage((p) => Math.max(0, p - 1))}
             title="上一页"
           >
-            <ChevronLeft className="w-3 h-3" />
-          </Button>
+            <ChevronLeft className="w-4 h-4" />
+          </div>
           <span className="text-xs text-foreground">
             {page + 1} / {maxPage + 1}
           </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={page >= maxPage}
-            onClick={() => setPage((p) => p + 1)}
+          <div
+            className={`p-1 rounded cursor-pointer ${page >= maxPage ? 'opacity-50' : 'hover:bg-accent'}`}
+            onClick={() => page < maxPage && setPage((p) => p + 1)}
             title="下一页"
           >
-            <ChevronRight className="w-3 h-3" />
-          </Button>
+            <ChevronRight className="w-4 h-4" />
+          </div>
         </div>
         <div className="text-xs text-muted-foreground">
           {Object.keys(filters).length > 0 ? (
@@ -516,15 +564,15 @@ export default function LazyLoadDataTable({
           )}
         </div>
         <div className="flex items-center gap-1">
-          <Button size="sm" variant="ghost" onClick={handleAddRow} title="添加行">
-            <Plus className="w-3 h-3" />
-          </Button>
-          <Button size="sm" variant="ghost" onClick={handleSave} title="保存">
-            <Save className="w-3 h-3" />
-          </Button>
-          <Button size="sm" variant="ghost" onClick={handleDelete} title="删除选中行">
-            <Trash className="w-3 h-3" />
-          </Button>
+          <div onClick={handleAddRow} className="p-1 hover:bg-accent rounded cursor-pointer" title="添加行">
+            <Plus className="w-4 h-4" />
+          </div>
+          <div onClick={handleSave} className="p-1 hover:bg-accent rounded cursor-pointer" title="保存">
+            <Save className="w-4 h-4" />
+          </div>
+          <div onClick={handleDelete} className="p-1 hover:bg-accent rounded cursor-pointer" title="删除选中行">
+            <Trash className="w-4 h-4" />
+          </div>
         </div>
       </div>
 
