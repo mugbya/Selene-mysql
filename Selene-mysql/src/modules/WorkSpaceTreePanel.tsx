@@ -398,14 +398,14 @@ function WorkSpaceTreePanel({
       const newDatabases = currentDatabases.filter(db => db !== dbName);
       useConnectionStore.getState().updateConnectionDisplayDatabases(tabId, newDatabases);
 
-      // 同时更新 localStorage 中的 displayDatabases
-      const savedConnections = JSON.parse(localStorage.getItem('db-connections') || '[]');
+      // 同时更新 localStorage 中的 displayDatabases - 保存到 db-connections-tree
       const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
       if (connection?.key) {
-        const connIndex = savedConnections.findIndex((c: any) => c.id === connection.key);
-        if (connIndex >= 0) {
-          savedConnections[connIndex].displayDatabases = newDatabases;
-          localStorage.setItem('db-connections', JSON.stringify(savedConnections));
+        const savedNodes = JSON.parse(localStorage.getItem('db-connections-tree') || '[]');
+        const nodeIndex = savedNodes.findIndex((n: any) => n.id === connection.key);
+        if (nodeIndex >= 0 && savedNodes[nodeIndex].data) {
+          savedNodes[nodeIndex].data.displayDatabases = newDatabases;
+          localStorage.setItem('db-connections-tree', JSON.stringify(savedNodes));
         }
       }
 
@@ -563,15 +563,14 @@ function WorkSpaceTreePanel({
                 onClick={() => {
                   useConnectionStore.getState().updateConnectionDisplayDatabases(tabId, filterSelectedDBs);
 
-                  // 同时保存到 localStorage
-                  const connections = useConnectionStore.getState().connectiontabs;
-                  const connection = connections.find(c => c.tabId === tabId);
-                  if (connection) {
-                    const savedConnections = JSON.parse(localStorage.getItem('db-connections') || '[]');
-                    const connIndex = savedConnections.findIndex((c: any) => c.id === connection.key || c.id === connection.tabId);
-                    if (connIndex >= 0) {
-                      savedConnections[connIndex].displayDatabases = filterSelectedDBs;
-                      localStorage.setItem('db-connections', JSON.stringify(savedConnections));
+                  // 同时保存到 localStorage - 保存到 db-connections-tree
+                  const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
+                  if (connection && connection.key) {
+                    const savedNodes = JSON.parse(localStorage.getItem('db-connections-tree') || '[]');
+                    const nodeIndex = savedNodes.findIndex((n: any) => n.id === connection.key);
+                    if (nodeIndex >= 0 && savedNodes[nodeIndex].data) {
+                      savedNodes[nodeIndex].data.displayDatabases = filterSelectedDBs;
+                      localStorage.setItem('db-connections-tree', JSON.stringify(savedNodes));
                     }
                   }
 

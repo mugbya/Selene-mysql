@@ -78,6 +78,19 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
     const alreadyOpen = connectiontabs.find((p) => p.tabId === conn.tabId);
     if (!alreadyOpen) {
+      // 如果是新连接且是数据库连接，从 localStorage 加载 displayDatabases
+      if (conn.isDataBase && conn.tabId) {
+        try {
+          const savedNodes = JSON.parse(localStorage.getItem('db-connections-tree') || '[]');
+          const savedNode = savedNodes.find((n: any) => n.id === conn.tabId);
+          if (savedNode?.data?.displayDatabases !== undefined) {
+            // 使用存储中的 displayDatabases，覆盖传入的值
+            conn = { ...conn, displayDatabases: savedNode.data.displayDatabases };
+          }
+        } catch (e) {
+          console.error("[openConnectionTab] 加载 displayDatabases 失败:", e);
+        }
+      }
       set({
         connectiontabs: [...connectiontabs, conn],
         activeId: conn.tabId,
