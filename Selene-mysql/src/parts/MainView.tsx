@@ -1,8 +1,11 @@
 import { useConnectionStore } from "@/store/useConnectionStore";
-import ConnectionManager from "./ConnectionManager";
-import DataBaseView from "./DataBaseView";
-import BaseSettings from "./settings/BaseSettings";
+import ConnectionManager from "@/modules/ConnectionManager";
+import DataBaseView from "@/modules/DataBaseView";
+import BaseSettings from "@/modules/settings/BaseSettings";
 
+/**
+ * 右边动态内容区域
+ */
 export default function MainView({ tabId }: { tabId: string | null }) {
   const connectiontabs = useConnectionStore((s) => s.connectiontabs);
 

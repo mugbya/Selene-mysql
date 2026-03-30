@@ -1,12 +1,12 @@
-import Header from "./modules/Header";
-import Footer from "./modules/Footer";
-import MenuPanel from "./modules/MenuPanel";
+import Header from "./parts/Header";
+import Footer from "./parts/Footer";
+import MenuPanel from "./parts/MenuPanel";
 import { useRef } from "react";
 import { Toaster } from "sonner";
 import { usePanelsStore } from "./store/usePanelsStore";
-import MainView from "./modules/MainView";
+import MainView from "./parts/MainView";
 import { useConnectionStore } from "./store/useConnectionStore";
-import ConnectionTabs from "./modules/ConnectionTabs";
+import ConnectionTabs from "./parts/ConnectionTabs";
 
 
 export default function Layout() {
