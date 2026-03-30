@@ -1,129 +1,151 @@
 import React, { useState } from 'react';
-import { useTheme } from "next-themes"; // shadcn 默认集成了这个库
-import { themeOptions } from "@/constants/theme";
-import { cn } from "@/lib/utils"; // shadcn 提供的 class 合并工具
-import { useI18n } from '@/hooks/useI18n';
-import LanguageSwitcher from "@/components/common/LanguageSwitcher";
-
+import { Globe, Palette, Sun, Moon } from 'lucide-react';
+import { cn } from "@/lib/utils";
+import { themeColors } from "@/constants/theme";
 
 export default function BaseSettings() {
-    const { setTheme, theme } = useTheme();
-    const [fontSize, setFontSize] = useState(16);
-    const [fontFamily, setFontFamily] = useState('system-ui');
-    const { t } = useI18n();
+  const [language, setLanguage] = useState(() => localStorage.getItem('language') || 'zh');
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
 
-    return (
-        <div className="flex-1 overflow-auto p-6 space-y-6">
-            <h3 className="text-lg font-semibold mb-2">🌗 {t('themeSettings')}</h3>
-            <div className="grid grid-cols-3 gap-4 p-4">
-                {themeOptions.map((t) => (
-                    <div
-                        key={t.key}
-                        onClick={() => setTheme(t.key)}
-                        className={cn(
-                            "cursor-pointer border-2 rounded-xl p-2 transition-all",
-                            theme === t.key ? "border-primary" : "border-transparent"
-                        )}
-                    >
-                        <img
-                            src={t.image}
-                            alt={t.label}
-                            className="rounded-lg w-full aspect-video object-cover hover:scale-105 transition-transform"
-                        />
-                        <div className="text-center mt-2 text-sm">{t.label}</div>
-                    </div>
-                ))}
-            </div>
+  // 语言选项
+  const languages = [
+    { key: 'zh', label: '简体中文', icon: '🇨🇳' },
+    { key: 'en', label: 'English', icon: '🇺🇸' },
+  ];
 
-            {/*<section className="border-b mb-5">*/}
-            {/*    <h3 className="text-lg font-semibold mb-2">🌗 主题设置</h3>*/}
-            {/*    /!*<select*!/*/}
-            {/*    /!*    value={theme}*!/*/}
-            {/*    /!*    onChange={(e) => setTheme(e.target.value)}*!/*/}
-            {/*    /!*    className="border rounded px-3 py-1"*!/*/}
-            {/*    /!*>*!/*/}
-            {/*    /!*    <option value="light">浅色模式</option>*!/*/}
-            {/*    /!*    <option value="dark">深色模式</option>*!/*/}
-            {/*    /!*    <option value="system">跟随系统</option>*!/*/}
-            {/*    /!*</select>*!/*/}
-            {/*    <button className="bg-[var(--card-bg)]" onClick={() => applyTheme('light', 'default')}>浅色</button>*/}
-            {/*    <button onClick={() => applyTheme('dark', 'default')}>深色</button>*/}
-            {/*    <button onClick={() => applyTheme(theme, 'green')}>绿色主题</button>*/}
-            {/*    <button onClick={() => applyTheme(theme, 'purple')}>紫色主题</button>*/}
+  // 主题选项
+  const themes = [
+    { key: 'light', label: '浅色', labelEn: 'Light', icon: Sun },
+    { key: 'dark', label: '深色', labelEn: 'Dark', icon: Moon },
+    { key: 'blue', label: '蓝色科技', labelEn: 'Blue', icon: Palette },
+    { key: 'green', label: '绿色护眼', labelEn: 'Green', icon: Palette },
+    { key: 'purple', label: '紫色优雅', labelEn: 'Purple', icon: Palette },
+    { key: 'orange', label: '橙色活力', labelEn: 'Orange', icon: Palette },
+  ];
 
-            {/*</section>*/}
+  const handleLanguageChange = (lang: string) => {
+    setLanguage(lang);
+    localStorage.setItem('language', lang);
+    // 触发语言更新事件
+    window.dispatchEvent(new CustomEvent('language-changed', { detail: lang }));
+  };
 
-            {/* 语言选择 */}
-            {/*<section className="border-b mb-5">*/}
-            {/*    <h3 className="text-lg font-semibold mb-2">🌍 语言选择</h3>*/}
-            {/*    <select*/}
-            {/*        value={language}*/}
-            {/*        // onChange={(e) => setLanguage(e.target.value)}*/}
-            {/*        className="border rounded px-3 py-1"*/}
-            {/*    >*/}
-            {/*        <option value="zh">简体中文</option>*/}
-            {/*        <option value="en">English</option>*/}
-            {/*    </select>*/}
-            {/*</section>*/}
-            <div className="mb-6">
-                <label className="block font-semibold mb-1">🌍{t('language')}</label>
-                {/*<select*/}
-                {/*    value={i18n.language}*/}
-                {/*    onChange={handleLanguageChange}*/}
-                {/*    className="border rounded px-3 py-1"*/}
-                {/*>*/}
-                {/*    <option value="zh">中文</option>*/}
-                {/*    <option value="en">English</option>*/}
-                {/*</select>*/}
-                <LanguageSwitcher />
-            </div>
+  const handleThemeChange = (t: string) => {
+    setTheme(t);
+    localStorage.setItem('theme', t);
+    // 应用主题
+    applyTheme(t);
+  };
 
-            {/* 字体设置 */}
-            <section className="border-b mb-5">
-                <h3 className="text-lg font-semibold mb-2">🔤 字体设置</h3>
-                <div className="space-y-2">
-                    <div>
-                        <label className="block mb-1">字体大小：{fontSize}px</label>
-                        <input
-                            type="range"
-                            min={12}
-                            max={32}
-                            value={fontSize}
-                            onChange={(e) => setFontSize(Number(e.target.value))}
-                            className="w-full"
-                        />
-                    </div>
-                    <div>
-                        <label className="block mb-1">字体类型</label>
-                        <select
-                            value={fontFamily}
-                            onChange={(e) => setFontFamily(e.target.value)}
-                            className="border rounded px-3 py-1"
-                        >
-                            <option value="system-ui">系统默认</option>
-                            <option value="serif">Serif</option>
-                            <option value="monospace">等宽字体</option>
-                            <option value="cursive">手写风格</option>
-                        </select>
-                    </div>
-                </div>
-            </section>
+  // 应用主题
+  const applyTheme = (themeKey: string) => {
+    // 移除之前的所有主题类
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.remove('theme-blue', 'theme-green', 'theme-purple', 'theme-orange');
 
-            {/* 预览区域 */}
-            <section className="border-b mb-5">
-                <h3 className="text-lg font-semibold mb-2">👀 预览</h3>
-                <div
-                    className="p-4 rounded border"
-                    style={{
-                        fontSize: `${fontSize}px`,
-                        fontFamily,
-                        backgroundColor: theme === 'dark' ? '#111' : '#f9f9f9',
-                        color: theme === 'dark' ? '#f5f5f5' : '#111',
-                    }}
-                >
-                    这是一段预览文字，可以根据你的设置实时变化。
-                </div>
-            </section>
+    if (themeKey === 'dark') {
+      document.documentElement.classList.add('dark');
+    }
+
+    // 添加主题类（蓝色、绿色、紫色、橙色额外添加，浅色不需要额外类）
+    if (['blue', 'green', 'purple', 'orange'].includes(themeKey)) {
+      document.documentElement.classList.add(`theme-${themeKey}`);
+    }
+  };
+
+  const getCurrentThemeColors = () => {
+    return themeColors[theme] || themeColors.light;
+  };
+
+  return (
+    <div className="flex-1 overflow-auto p-6 space-y-6">
+      {/* 语言设置 */}
+      <section className="border-b pb-4">
+        <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
+          <Globe className="w-4 h-4" />
+          语言 / Language
+        </h3>
+        <div className="flex gap-2">
+          {languages.map(lang => (
+            <button
+              key={lang.key}
+              onClick={() => handleLanguageChange(lang.key)}
+              className={cn(
+                "px-4 py-2 rounded border transition-all text-sm",
+                language === lang.key
+                  ? "border-blue-500 bg-blue-50 text-blue-600"
+                  : "border-gray-300 hover:bg-gray-50"
+              )}
+            >
+              <span className="mr-1">{lang.icon}</span>
+              {lang.label}
+            </button>
+          ))}
         </div>
-    );
+      </section>
+
+      {/* 主题设置 */}
+      <section className="pb-4">
+        <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
+          <Palette className="w-4 h-4" />
+          主题 / Theme
+        </h3>
+        <div className="grid grid-cols-3 gap-3">
+          {themes.map(t => {
+            const Icon = t.icon;
+            const colors = themeColors[t.key] || themeColors.light;
+            return (
+              <button
+                key={t.key}
+                onClick={() => handleThemeChange(t.key)}
+                className={cn(
+                  "flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all",
+                  theme === t.key
+                    ? "border-blue-500 shadow-md"
+                    : "border-gray-200 hover:border-gray-300"
+                )}
+              >
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: colors.primary }}
+                >
+                  <Icon className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xs font-medium">{t.label}</span>
+                <span className="text-[10px] text-gray-400">{t.labelEn}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 预览 */}
+      <section className="border-t pt-4">
+        <h3 className="text-sm font-medium mb-3 text-gray-500">预览</h3>
+        <div
+          className="p-4 rounded-lg border"
+          style={{
+            backgroundColor: getCurrentThemeColors().background,
+            borderColor: getCurrentThemeColors().border,
+          }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div
+              className="w-4 h-4 rounded"
+              style={{ backgroundColor: getCurrentThemeColors().primary }}
+            />
+            <span
+              className="text-sm font-medium"
+              style={{ color: getCurrentThemeColors().primary }}
+            >
+              示例标题
+            </span>
+          </div>
+          <p className="text-sm text-gray-600">
+            当前主题：{themes.find(t => t.key === theme)?.label} ({themes.find(t => t.key === theme)?.labelEn})
+          </p>
+        </div>
+      </section>
+    </div>
+  );
 }

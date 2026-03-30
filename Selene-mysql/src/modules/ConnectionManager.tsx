@@ -51,6 +51,9 @@ const saveExpandedFolders = (folders: Set<string>) => {
   localStorage.setItem(EXPANDED_FOLDERS_KEY, JSON.stringify([...folders]));
 };
 
+/**
+ * 连接管理
+ */
 export default function ConnectionManager() {
   const [editing, setEditing] = useState<DBConnectionPersisted | null>(null);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);

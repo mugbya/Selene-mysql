@@ -9,6 +9,7 @@ export type Connection = {
   key?: string; // 连接key,后端根据key从连接池获取链接
   name: string;
   isDataBase: boolean;
+  tabType: 'database' | 'connectionManager' | 'settings'; // tab 类型
   databases?: string[]; // 当前连接的所有数据库
   displayDatabases?: string[] | null; // 用户自定义要展示的数据库
   currentDb?: string; // 当前激活的数据库
@@ -62,6 +63,7 @@ type ConnectionState = {
   setActiveContentTab: (id: string) => void;
 
   getActiveContent: () => ContentTab | null;
+  openSettingsTab: () => void;
 };
 
 export const useConnectionStore = create<ConnectionState>((set, get) => ({
@@ -119,8 +121,8 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   toggleConnectionButton: () => {
     const { connectiontabs } = get();
 
-    // const alreadyOpen = connectiontabs.find((p) => p.name === "连接管理");
-    const alreadyOpen = connectiontabs.find((item) => !item.isDataBase);
+    // 查找连接管理 tab
+    const alreadyOpen = connectiontabs.find((item) => item.tabType === 'connectionManager');
     if (alreadyOpen) {
       set({ activeId: alreadyOpen.tabId });
     } else {
@@ -128,12 +130,36 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
         tabId: crypto.randomUUID(),
         name: "连接管理",
         isDataBase: false,
+        tabType: 'connectionManager',
       }
       set({
         connectiontabs: [...connectiontabs, conn],
         activeId: conn.tabId,
       });
     }
+  },
+
+  openSettingsTab: () => {
+    const { connectiontabs } = get();
+
+    // 查找是否已有设置 tab
+    const existingSettings = connectiontabs.find((tab) => tab.tabType === 'settings');
+    if (existingSettings) {
+      set({ activeId: existingSettings.tabId });
+      return;
+    }
+
+    // 创建新的设置 tab
+    const settingsTab: Connection = {
+      tabId: crypto.randomUUID(),
+      name: "设置",
+      isDataBase: false,
+      tabType: 'settings',
+    };
+    set({
+      connectiontabs: [...connectiontabs, settingsTab],
+      activeId: settingsTab.tabId,
+    });
   },
 
   openContentTab: (tab) => {

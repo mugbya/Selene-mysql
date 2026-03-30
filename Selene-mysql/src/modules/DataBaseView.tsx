@@ -11,6 +11,9 @@ import WorkSpaceTreePanel from "./WorkSpaceTreePanel";
 import { ContentTabManager } from "./ContentTabManager";
 import { useConnectionStore } from "@/store/useConnectionStore";
 
+/**
+ * 数据库视图：布局数据库显示
+ */
 export default function DataBaseView({ tabId, dbKey, databases, allDatabases }: { tabId: string, dbKey: string | null, databases: string[], allDatabases?: string[] }) {
 
   const showRightPanel = usePanelsStore((s) => s.showRightPanel);

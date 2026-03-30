@@ -3,6 +3,9 @@ import { MenuPanelProps } from '../types';
 import { useConnectionStore } from '@/store/useConnectionStore';
 
 
+/**
+ * 最左侧的菜单面板 
+ */
 export default function MenuPanel({ openSettings, toggleLeft }: MenuPanelProps) {
     // const { setShowLeftPanel } = useLayoutContext();
     // const toggleConnectionView  = useMainViewStore((s) => s.toggleConnectionView);

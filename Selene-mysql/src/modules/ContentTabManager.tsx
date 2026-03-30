@@ -16,6 +16,9 @@ import { toast } from "sonner";
 import { SaveQueryDialog } from "@/components/common/dialog/SaveQueryDialog";
 import { useSavedQueries } from "@/hooks/useSavedQueries";
 
+/**
+ * 查询(内容)tab页
+ */
 // export const EditorTabManager: React.FC<{ dbKey: string; onExecResult: ExecResultCallback }> = ({ dbKey, onExecResult }) => {
 export const ContentTabManager: React.FC<ExecResultProps> = ({
   dbKey,

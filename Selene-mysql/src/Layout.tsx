@@ -10,16 +10,12 @@ import ConnectionTabs from "./modules/ConnectionTabs";
 
 
 export default function Layout() {
- 
-  // // Panels 状态
   const toggleLeftPanel = usePanelsStore((s) => s.toggleLeftPanel);
   const toggleRightPanel = usePanelsStore((s) => s.toggleRightPanel);
-  const setShowRightPanel = usePanelsStore((s) => s.setShowRightPanel);
 
   const renderCount = useRef(0);
   renderCount.current += 1;
   console.log("\n[Layout] 执行渲染 count:", renderCount.current);
-
 
   const conTabId = useConnectionStore((s) => s.activeId);
 
@@ -36,7 +32,9 @@ export default function Layout() {
       <div className="flex flex-1 overflow-hidden pt-2">
         {/* 最左侧菜单栏 */}
         <MenuPanel
-          openSettings={() => setShowRightPanel(true)}
+          openSettings={() => {
+            useConnectionStore.getState().openSettingsTab();
+          }}
           toggleLeft={toggleLeftPanel}
         />
 
