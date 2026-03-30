@@ -54,8 +54,8 @@ export const EditTabs: React.FC<ExecResultProps> = ({ dbKey, onExecResult }) => 
             className={cn(
               "flex items-center px-3 py-1 mr-1 text-sm rounded-t border border-b-0 cursor-pointer",
               tab.tabId === activeContentId
-                ? "bg-white border-gray-300 font-semibold"
-                : "bg-gray-100 hover:bg-gray-200 text-gray-600"
+                ? "bg-background border-border font-semibold"
+                : "bg-muted hover:bg-accent text-muted-foreground"
             )}
             onClick={() => setActiveContentTab(tab.tabId)}
           >
@@ -72,7 +72,7 @@ export const EditTabs: React.FC<ExecResultProps> = ({ dbKey, onExecResult }) => 
 
         {/* + 新建按钮 */}
         <button
-          className="px-2 py-1 text-sm rounded hover:bg-gray-200 text-gray-600"
+          className="px-2 py-1 text-sm rounded hover:bg-accent text-muted-foreground"
           onClick={() => {
             const id = nanoid();
             openContentTab({
@@ -100,7 +100,7 @@ export const EditTabs: React.FC<ExecResultProps> = ({ dbKey, onExecResult }) => 
             <SqlMonacoEditor dbKey={dbKey} onExecResult={onExecResult} />
           </div>
         ) : (
-          <div className="text-center text-gray-400 mt-10">没有打开的编辑器</div>
+          <div className="text-center text-muted-foreground mt-10">没有打开的编辑器</div>
         )}
       </div>
     </main>

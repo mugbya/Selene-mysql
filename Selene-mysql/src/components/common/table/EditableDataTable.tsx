@@ -89,7 +89,7 @@ export const EditableDataTable: React.FC<EditableDataTableProps> = ({
             <col className="w-24" />
           </colgroup>
 
-          <thead className="bg-gray-100 sticky top-0 z-10">
+          <thead className="bg-muted sticky top-0 z-10">
             <tr>
               <th className="px-2 py-1 text-center">
                 <input type="checkbox" onChange={toggleAll} checked={selectedRows.length === result.rows.length} />
@@ -114,7 +114,7 @@ export const EditableDataTable: React.FC<EditableDataTableProps> = ({
 
           <tbody>
             {result.rows.map((row, rowIndex) => (
-              <tr key={rowIndex} className={rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+              <tr key={rowIndex} className={rowIndex % 2 === 0 ? "bg-background" : "bg-muted"}>
                 <td className="px-2 py-1 text-center">
                   <input
                     type="checkbox"
@@ -129,7 +129,7 @@ export const EditableDataTable: React.FC<EditableDataTableProps> = ({
                   >
                     {editingRow === rowIndex ? (
                       <input
-                        className="w-full bg-yellow-50 border rounded px-1 text-xs"
+                        className="w-full bg-yellow-50/50 border rounded px-1 text-xs"
                         value={editedRowData[colIndex]}
                         onChange={(e) => {
                           const copy = [...editedRowData];
@@ -148,7 +148,7 @@ export const EditableDataTable: React.FC<EditableDataTableProps> = ({
         </table>
       </div>
 
-      <div className="border-t p-2 bg-white flex justify-between items-center text-xs">
+      <div className="border-t p-2 bg-muted flex justify-between items-center text-xs">
         <span>共 {result.rows.length} 条记录，已选中 {selectedRows.length} 条</span>
       </div>
     </div>

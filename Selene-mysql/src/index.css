@@ -128,6 +128,22 @@
 
 /* 自定义主题样式 */
 
+/* 基础浅色主题变量 */
+:root {
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+}
+
+/* 深色主题的 muted 颜色 */
+.dark {
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+}
+
 /* 蓝色科技主题 */
 .theme-blue {
   --background: #f0f9ff;
@@ -137,6 +153,10 @@
   --border: #bae6fd;
   --card: #ffffff;
   --card-foreground: #0c4a6e;
+  --muted: #e0f2fe;
+  --muted-foreground: #0369a1;
+  --accent: #bae6fd;
+  --accent-foreground: #0c4a6e;
 }
 
 /* 绿色护眼主题 */
@@ -148,6 +168,10 @@
   --border: #bbf7d0;
   --card: #ffffff;
   --card-foreground: #14532d;
+  --muted: #dcfce7;
+  --muted-foreground: #15803d;
+  --accent: #bbf7d0;
+  --accent-foreground: #14532d;
 }
 
 /* 紫色优雅主题 */
@@ -159,6 +183,10 @@
   --border: #e9d5ff;
   --card: #ffffff;
   --card-foreground: #581c87;
+  --muted: #f3e8ff;
+  --muted-foreground: #7e22ce;
+  --accent: #e9d5ff;
+  --accent-foreground: #581c87;
 }
 
 /* 橙色活力主题 */
@@ -170,4 +198,8 @@
   --border: #fed7aa;
   --card: #ffffff;
   --card-foreground: #9a3412;
+  --muted: #ffedd5;
+  --muted-foreground: #c2410c;
+  --accent: #fed7aa;
+  --accent-foreground: #9a3412;
 }

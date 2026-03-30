@@ -494,10 +494,10 @@ function WorkSpaceTreePanel({
 
       {filterDialogOpen && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded border w-[400px] max-h-[500px] flex flex-col">
+          <div className="bg-background p-4 rounded border w-[400px] max-h-[500px] flex flex-col">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-bold">筛选数据库</h3>
-              <button onClick={() => setFilterDialogOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+              <button onClick={() => setFilterDialogOpen(false)} className="text-muted-foreground hover:text-foreground">✕</button>
             </div>
             
             <input
@@ -509,7 +509,7 @@ function WorkSpaceTreePanel({
             />
 
             {filterLoading ? (
-              <div className="text-gray-500">正在加载...</div>
+              <div className="text-muted-foreground">正在加载...</div>
             ) : (
               <div className="flex-1 overflow-auto">
                 <div className="mb-3">
@@ -532,7 +532,7 @@ function WorkSpaceTreePanel({
                   {filterDbList
                     .filter(name => name.toLowerCase().includes(filterSearchKeyword.toLowerCase()))
                     .map(name => (
-                      <label key={name} className="flex items-center gap-2 hover:bg-gray-50 py-1">
+                      <label key={name} className="flex items-center gap-2 hover:bg-accent py-1">
                         <input
                           type="checkbox"
                           checked={filterSelectedDBs.includes(name)}
@@ -553,13 +553,13 @@ function WorkSpaceTreePanel({
 
             <div className="mt-4 flex justify-end gap-2">
               <button
-                className="px-3 py-1 bg-gray-400 text-white rounded"
+                className="px-3 py-1 bg-muted text-foreground rounded"
                 onClick={() => setFilterDialogOpen(false)}
               >
                 取消
               </button>
               <button
-                className="px-3 py-1 bg-blue-500 text-white rounded"
+                className="px-3 py-1 bg-primary text-primary-foreground rounded"
                 onClick={() => {
                   useConnectionStore.getState().updateConnectionDisplayDatabases(tabId, filterSelectedDBs);
 
@@ -592,14 +592,14 @@ function WorkSpaceTreePanel({
             <span className="text-sm font-medium">数据库列表</span>
             {/* 显示筛选数量/总数 */}
             {databases.length > 0 && (
-              <span className="text-xs text-gray-400 ml-1">
+              <span className="text-xs text-muted-foreground ml-1">
                 ({databases.length}/{totalDatabases.length})
               </span>
             )}
           </div>
           <div className="flex items-center gap-1">
             <Filter
-              className="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-700"
+              className="w-4 h-4 text-muted-foreground cursor-pointer hover:text-foreground"
               onClick={() => {
                 const connection = useConnectionStore.getState().connectiontabs.find(c => c.tabId === tabId);
                 const currentDisplayDbs = connection?.displayDatabases || [];
@@ -620,7 +620,7 @@ function WorkSpaceTreePanel({
               }}
             />
             <Plus
-              className="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-700"
+              className="w-4 h-4 text-muted-foreground cursor-pointer hover:text-foreground"
               onClick={() => setCreateDbDialogOpen(true)}
             />
           </div>
@@ -633,13 +633,13 @@ function WorkSpaceTreePanel({
               <div
                 className={`flex items-center space-x-2 cursor-pointer rounded px-1 py-0.5 ${
                   db.expanded || currentDatabase === db.name
-                    ? "text-blue-600 font-medium"
-                    : "hover:text-blue-600"
+                    ? "text-primary font-medium"
+                    : "hover:text-primary"
                 }`}
                 onClick={() => toggleDatabaseExpand(db.name)}
                 onDoubleClick={() => openQueryTab(db.name)}
               >
-                <DatabaseIcon className="w-5 h-5" />
+                <DatabaseIcon className="w-5 h-5 text-primary" />
                 <span>{db.name}</span>
               </div>
             </ContextMenuTrigger>
@@ -648,7 +648,7 @@ function WorkSpaceTreePanel({
               <ContextMenuSeparator />
               <ContextMenuItem
                 onClick={() => handleAction("delete", db.name)}
-                className="text-red-600 focus:text-red-600"
+                className="text-destructive focus:text-destructive"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 删除数据库
@@ -658,7 +658,7 @@ function WorkSpaceTreePanel({
 
           {/* 展开分类 */}
           {db.expanded && (
-            <ul className="ml-2 mt-1 space-y-1 text-gray-600 text-sm">
+            <ul className="ml-2 mt-1 space-y-1 text-muted-foreground text-sm">
               <TreeNode
                 label={
                   <ContextMenu>
@@ -672,12 +672,12 @@ function WorkSpaceTreePanel({
                             ? db.tables.length
                             : db.tables.filter(t => (db.visibleTables || []).includes(t)).length;
                           return (
-                            <span className="text-xs text-gray-400">
+                            <span className="text-xs text-muted-foreground">
                               ({displayedCount}/{db.tables.length})
                             </span>
                           );
                         })() : db.tablesCount ? (
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-muted-foreground">
                             ({db.visibleTables?.length || 0}/{db.tablesCount})
                           </span>
                         ) : null}
@@ -752,9 +752,9 @@ function WorkSpaceTreePanel({
                   >
                     <TerminalSquare className="w-4 h-4" />
                     <span className="flex-1">查询</span>
-                    <span className="text-xs text-gray-400">({savedQueries.length})</span>
+                    <span className="text-xs text-muted-foreground">({savedQueries.length})</span>
                     {/* <RefreshCw
-                      className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-pointer"
+                      className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
                         refreshQueries();
@@ -766,14 +766,14 @@ function WorkSpaceTreePanel({
                 defaultExpanded={queriesExpanded}
               >
                 {savedQueries.length === 0 ? (
-                  <li className="text-gray-400 text-xs ml-4">暂无保存的查询</li>
+                  <li className="text-muted-foreground text-xs ml-4">暂无保存的查询</li>
                 ) : (
                   savedQueries.map((query) => (
                     <li key={query.id}>
                       <ContextMenu>
                         <ContextMenuTrigger>
                           <div
-                            className="flex items-center gap-1 cursor-pointer hover:text-blue-600 py-0.5"
+                            className="flex items-center gap-1 cursor-pointer hover:text-primary py-0.5"
                             onClick={() => openSavedQuery(query)}
                           >
                             <FileText className="w-4 h-4" />
@@ -790,7 +790,7 @@ function WorkSpaceTreePanel({
                           <ContextMenuSeparator />
                           <ContextMenuItem
                             onClick={() => handleDeleteQuery(query.id)}
-                            className="text-red-600 focus:text-red-600"
+                            className="text-destructive focus:text-destructive"
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
                             删除
@@ -811,8 +811,8 @@ function WorkSpaceTreePanel({
       {/* 重命名查询对话框 */}
       {renameDialogOpen && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded border w-[300px]">
-            <h3 className="text-lg font-bold mb-3">重命名查询</h3>
+          <div className="bg-background p-4 rounded border w-[300px]">
+            <h3 className="text-lg font-bold mb-3 text-foreground">重命名查询</h3>
             <Input
               value={renameInput}
               onChange={(e) => setRenameInput(e.target.value)}
@@ -826,13 +826,13 @@ function WorkSpaceTreePanel({
             />
             <div className="flex justify-end gap-2">
               <button
-                className="px-3 py-1 bg-gray-400 text-white rounded"
+                className="px-3 py-1 bg-muted text-foreground rounded"
                 onClick={() => setRenameDialogOpen(false)}
               >
                 取消
               </button>
               <button
-                className="px-3 py-1 bg-blue-500 text-white rounded"
+                className="px-3 py-1 bg-primary text-primary-foreground rounded"
                 onClick={confirmRename}
               >
                 确定

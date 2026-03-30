@@ -89,7 +89,7 @@ const DMLResultView: React.FC<EditableResultTableProps> = ({ result, onDelete, o
   return (
     <div className="flex-1 flex flex-col">
       {/* 顶部操作栏 */}
-      <div className="p-2 border-b bg-white flex gap-2 items-center justify-between">
+      <div className="p-2 border-b bg-background flex gap-2 items-center justify-between">
         {result.success === false ? (
           <span className="text-red-600 font-medium">执行失败</span>
         ) : (
@@ -99,7 +99,7 @@ const DMLResultView: React.FC<EditableResultTableProps> = ({ result, onDelete, o
         {onClose && (
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-black flex items-center"
+            className="text-muted-foreground hover:text-foreground flex items-center"
             title="关闭结果表"
           >
             <X className="w-4 h-4" />
@@ -109,8 +109,8 @@ const DMLResultView: React.FC<EditableResultTableProps> = ({ result, onDelete, o
 
       {/* 错误详情 */}
       {result.error && (
-        <div className="flex-1 overflow-auto p-4 bg-red-50">
-          <div className="text-red-600 whitespace-pre-wrap">{result.error}</div>
+        <div className="flex-1 overflow-auto p-4 bg-destructive/10">
+          <div className="text-destructive whitespace-pre-wrap">{result.error}</div>
         </div>
       )}
 
@@ -129,7 +129,7 @@ const DMLResultView: React.FC<EditableResultTableProps> = ({ result, onDelete, o
               <col className="w-24" />
             </colgroup>
 
-            <thead className="bg-gray-100 sticky top-0 z-10">
+            <thead className="bg-muted sticky top-0 z-10">
               <tr>
                 <th className="px-2 py-1 text-center">
                   <input type="checkbox" onChange={toggleAll} checked={selectedRows.length === result.rows.length} />
@@ -156,7 +156,7 @@ const DMLResultView: React.FC<EditableResultTableProps> = ({ result, onDelete, o
               {result.rows.map((row, rowIndex) => (
                 <tr
                   key={rowIndex}
-                  className={selectedRows.includes(rowIndex) ? "bg-blue-50" : "hover:bg-gray-50"}
+                  className={selectedRows.includes(rowIndex) ? "bg-primary/10" : "hover:bg-accent"}
                 >
                   <td className="px-2 py-1 border-r text-center">
                     <input
@@ -187,7 +187,7 @@ const DMLResultView: React.FC<EditableResultTableProps> = ({ result, onDelete, o
                         <button onClick={handleSaveEdit} className="text-green-500 hover:text-green-700">
                           <Save className="w-4 h-4" />
                         </button>
-                        <button onClick={() => setEditingRow(null)} className="text-gray-500 hover:text-gray-700">
+                        <button onClick={() => setEditingRow(null)} className="text-muted-foreground hover:text-foreground">
                           <X className="w-4 h-4" />
                         </button>
                       </td>
@@ -221,7 +221,7 @@ const DMLResultView: React.FC<EditableResultTableProps> = ({ result, onDelete, o
       )}
 
       {/* 底部统计 */}
-      <div className="border-t p-2 bg-white flex justify-between items-center text-xs">
+      <div className="border-t p-2 bg-background flex justify-between items-center text-xs">
         <span>共 {result.rows.length} 条记录，已选中 {selectedRows.length} 条</span>
         {selectedRows.length > 0 && onDelete && (
           <button

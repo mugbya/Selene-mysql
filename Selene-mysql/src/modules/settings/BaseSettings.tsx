@@ -60,33 +60,33 @@ export default function BaseSettings() {
   return (
     <div className="flex-1 overflow-auto p-6 space-y-6">
       {/* 语言设置 */}
-      <section className="border-b pb-4">
-        <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
+      <section className="border-b border-border pb-4">
+        <h3 className="text-base font-semibold mb-3 flex items-center gap-2 text-foreground">
           <Globe className="w-4 h-4" />
           语言 / Language
         </h3>
         <div className="flex gap-2">
           {languages.map(lang => (
-            <button
+            <div
               key={lang.key}
               onClick={() => handleLanguageChange(lang.key)}
               className={cn(
                 "px-4 py-2 rounded border transition-all text-sm",
                 language === lang.key
-                  ? "border-blue-500 bg-blue-50 text-blue-600"
-                  : "border-gray-300 hover:bg-gray-50"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border hover:bg-accent text-foreground"
               )}
             >
               <span className="mr-1">{lang.icon}</span>
               {lang.label}
-            </button>
+            </div>
           ))}
         </div>
       </section>
 
       {/* 主题设置 */}
       <section className="pb-4">
-        <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
+        <h3 className="text-base font-semibold mb-3 flex items-center gap-2 text-foreground">
           <Palette className="w-4 h-4" />
           主题 / Theme
         </h3>
@@ -95,14 +95,14 @@ export default function BaseSettings() {
             const Icon = t.icon;
             const colors = themeColors[t.key] || themeColors.light;
             return (
-              <button
+              <div
                 key={t.key}
                 onClick={() => handleThemeChange(t.key)}
                 className={cn(
                   "flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all",
                   theme === t.key
-                    ? "border-blue-500 shadow-md"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-primary shadow-md"
+                    : "border-border hover:border-muted-foreground"
                 )}
               >
                 <div
@@ -111,19 +111,19 @@ export default function BaseSettings() {
                 >
                   <Icon className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xs font-medium">{t.label}</span>
-                <span className="text-[10px] text-gray-400">{t.labelEn}</span>
-              </button>
+                <span className="text-xs font-medium text-foreground">{t.label}</span>
+                <span className="text-[10px] text-muted-foreground">{t.labelEn}</span>
+              </div>
             );
           })}
         </div>
       </section>
 
       {/* 预览 */}
-      <section className="border-t pt-4">
-        <h3 className="text-sm font-medium mb-3 text-gray-500">预览</h3>
+      <section className="border-t border-border pt-4">
+        <h3 className="text-sm font-medium mb-3 text-muted-foreground">预览</h3>
         <div
-          className="p-4 rounded-lg border"
+          className="p-4 rounded-lg border border-border"
           style={{
             backgroundColor: getCurrentThemeColors().background,
             borderColor: getCurrentThemeColors().border,
@@ -141,7 +141,7 @@ export default function BaseSettings() {
               示例标题
             </span>
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             当前主题：{themes.find(t => t.key === theme)?.label} ({themes.find(t => t.key === theme)?.labelEn})
           </p>
         </div>

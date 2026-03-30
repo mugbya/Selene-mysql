@@ -13,15 +13,15 @@ export default function Dialog() {
   };
 
   return (
-    <div className="w-full h-screen flex items-center justify-center bg-white">
-      <div className="p-6 border rounded bg-gray-100">
-        <h2 className="text-xl font-bold mb-4">确认操作</h2>
-        <p>你确认要执行该操作吗？</p>
+    <div className="w-full h-screen flex items-center justify-center bg-background">
+      <div className="p-6 border rounded bg-muted">
+        <h2 className="text-xl font-bold mb-4 text-foreground">确认操作</h2>
+        <p className="text-foreground">你确认要执行该操作吗？</p>
         <div className="mt-4 flex justify-end gap-2">
-          <button onClick={() => window.close()} className="px-4 py-2 bg-gray-300 rounded">
+          <button onClick={() => window.close()} className="px-4 py-2 bg-muted-foreground text-muted rounded">
             取消
           </button>
-          <button onClick={handleConfirm} className="px-4 py-2 bg-blue-500 text-white rounded">
+          <button onClick={handleConfirm} className="px-4 py-2 bg-primary text-primary-foreground rounded">
             确认
           </button>
         </div>

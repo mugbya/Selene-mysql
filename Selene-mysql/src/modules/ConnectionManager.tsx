@@ -8,7 +8,7 @@ import ConnectionFormDialog from '@/components/common/dialog/ConnectionFormDialo
 import { connectDatabase, fetchDatabases, disconnectDatabase } from '@/db/msyql-client';
 import {
   Plus, Link, Pencil, Copy, Trash2, FolderOpen, FolderClosed, ChevronRight, ChevronDown,
-  Database, FolderPlus, Check, X, GitBranch
+  Database, FolderPlus, Check, X
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
@@ -336,6 +336,7 @@ export default function ConnectionManager() {
       key: conn.id,
       name: conn.name,
       isDataBase: true,
+      tabType: 'database' as const,
       databases: realDatabases,
       displayDatabases,
     };
@@ -368,7 +369,7 @@ export default function ConnectionManager() {
     return (
       <div key={node.id}>
         <div
-          className={`flex items-center gap-1 px-2 py-1 rounded cursor-pointer hover:bg-gray-100 ${isSelected ? 'bg-blue-50' : ''}`}
+          className={`flex items-center gap-1 px-2 py-1 rounded cursor-pointer hover:bg-accent ${isSelected ? 'bg-accent' : ''}`}
           style={{ paddingLeft: `${depth * 16 + 8}px` }}
           onClick={() => {
             if (isEditing) return;
@@ -384,12 +385,12 @@ export default function ConnectionManager() {
             <span className="w-3" />
           )}
           {node.type === 'folder' && (
-            isExpanded ? <ChevronDown className="w-3 h-3 text-gray-400" /> : <ChevronRight className="w-3 h-3 text-gray-400" />
+            isExpanded ? <ChevronDown className="w-3 h-3 text-muted-foreground" /> : <ChevronRight className="w-3 h-3 text-muted-foreground" />
           )}
           {node.type === 'folder' ? (
             isExpanded ? <FolderOpen className="w-4 h-4 text-yellow-500" /> : <FolderClosed className="w-4 h-4 text-yellow-500" />
           ) : (
-            <Database className="w-4 h-4 text-blue-500" />
+            <Database className="w-4 h-4 text-primary" />
           )}
 
           {isEditing ? (
@@ -413,7 +414,7 @@ export default function ConnectionManager() {
                 }}
               />
               <X
-                className="w-3 h-3 text-gray-400 cursor-pointer hover:text-gray-600"
+                className="w-3 h-3 text-muted-foreground cursor-pointer hover:text-foreground"
                 onClick={(e) => {
                   e.stopPropagation();
                   cancelEditFolderName();
@@ -448,24 +449,24 @@ export default function ConnectionManager() {
   const rootItems = buildTree(null);
 
   return (
-    <div className="w-80 h-full flex flex-col border-r">
+    <div className="w-80 h-full flex flex-col border-r border-border">
       {/* 头部 */}
-      <div className="flex items-center justify-between px-3 py-2 border-b bg-gray-50">
-        <span className="text-sm font-medium text-gray-700">连接管理</span>
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/50">
+        <span className="text-sm font-medium text-foreground">连接管理</span>
         <div className="flex items-center gap-1">
           <div
             onClick={() => handleCreateFolder(null)}
-            className="p-1 hover:bg-gray-200 rounded cursor-pointer"
+            className="p-1 hover:bg-accent rounded cursor-pointer"
             title="新建文件夹"
           >
-            <FolderPlus className="w-4 h-4 text-gray-600" />
+            <FolderPlus className="w-4 h-4 text-muted-foreground" />
           </div>
           <div
             onClick={() => handleAddConnection(null)}
-            className="p-1 hover:bg-gray-200 rounded cursor-pointer"
+            className="p-1 hover:bg-accent rounded cursor-pointer"
             title="新建连接"
           >
-            <Plus className="w-4 h-4 text-gray-600" />
+            <Plus className="w-4 h-4 text-muted-foreground" />
           </div>
         </div>
       </div>
@@ -473,7 +474,7 @@ export default function ConnectionManager() {
       {/* 树形列表 */}
       <div className="flex-1 overflow-auto py-2">
         {rootItems.length === 0 ? (
-          <div className="text-center text-gray-400 text-xs py-8">
+          <div className="text-center text-muted-foreground text-xs py-8">
             暂无连接<br />点击上方 + 创建
           </div>
         ) : (
@@ -484,14 +485,14 @@ export default function ConnectionManager() {
       {/* 右键菜单 */}
       {contextMenu && (
         <div
-          className="fixed bg-white border rounded shadow-lg py-1 z-50 min-w-32"
+          className="fixed bg-background border rounded shadow-lg py-1 z-50 min-w-32"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
           {contextMenu.node.type === 'folder' && (
             <>
               <div
-                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-100 cursor-pointer"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent cursor-pointer"
                 onClick={() => {
                   startEditFolderName(contextMenu.node);
                   setContextMenu(null);
@@ -500,13 +501,13 @@ export default function ConnectionManager() {
                 <Pencil className="w-3 h-3" /> 重命名
               </div>
               <div
-                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-100 cursor-pointer"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent cursor-pointer"
                 onClick={() => handleAddConnection(contextMenu.node.id)}
               >
                 <Plus className="w-3 h-3" /> 新建连接
               </div>
               <div
-                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-100 cursor-pointer"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent cursor-pointer"
                 onClick={() => handleCreateFolder(contextMenu.node.id)}
               >
                 <FolderPlus className="w-3 h-3" /> 新建文件夹
@@ -517,19 +518,19 @@ export default function ConnectionManager() {
           {contextMenu.node.type === 'connection' && (
             <>
               <div
-                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-100 cursor-pointer text-green-600"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent cursor-pointer text-green-600"
                 onClick={() => handleConnect(contextMenu.node)}
               >
                 <Link className="w-3 h-3" /> 连接
               </div>
               <div
-                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-100 cursor-pointer"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent cursor-pointer"
                 onClick={() => handleEdit(contextMenu.node)}
               >
                 <Pencil className="w-3 h-3" /> 编辑连接
               </div>
               <div
-                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-100 cursor-pointer"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent cursor-pointer"
                 onClick={() => handleCopy(contextMenu.node)}
               >
                 <Copy className="w-3 h-3" /> 复制连接
@@ -539,7 +540,7 @@ export default function ConnectionManager() {
 
           <div className="border-t my-1" />
           <div
-            className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-100 cursor-pointer text-red-600"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent cursor-pointer text-destructive"
             onClick={() => handleDelete(contextMenu.node.id)}
           >
             <Trash2 className="w-3 h-3" /> 删除

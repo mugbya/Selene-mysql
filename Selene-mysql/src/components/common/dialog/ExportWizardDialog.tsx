@@ -199,7 +199,7 @@ export function ExportWizardDialog({
               {tables.map((table) => (
                 <label
                   key={table}
-                  className="flex items-center space-x-2 p-1 rounded hover:bg-gray-100 cursor-pointer"
+                  className="flex items-center space-x-2 p-1 rounded hover:bg-accent cursor-pointer"
                 >
                   <input
                     type="checkbox"
@@ -272,7 +272,7 @@ export function ExportWizardDialog({
                   <Copy className="w-4 h-4 mr-1" /> 复制
                 </Button>
               </div>
-              <pre className="bg-gray-900 text-gray-100 p-4 rounded-md overflow-auto max-h-[300px] text-xs font-mono">
+              <pre className="bg-black/90 text-gray-100 p-4 rounded-md overflow-auto max-h-[300px] text-xs font-mono">
                 {exportResult}
               </pre>
             </div>

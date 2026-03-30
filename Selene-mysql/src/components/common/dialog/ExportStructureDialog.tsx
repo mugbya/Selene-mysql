@@ -69,7 +69,7 @@ export function ExportStructureDialog({
 
         <div className="space-y-4">
           {loading ? (
-            <div className="text-center py-8 text-gray-500">加载中...</div>
+            <div className="text-center py-8 text-muted-foreground">加载中...</div>
           ) : (
             <>
               <div className="flex justify-end gap-2">
@@ -77,7 +77,7 @@ export function ExportStructureDialog({
                   <Copy className="w-4 h-4 mr-1" /> 复制
                 </Button>
               </div>
-              <pre className="bg-gray-900 text-gray-100 p-4 rounded-md overflow-auto max-h-[400px] text-xs font-mono">
+              <pre className="bg-black/90 text-gray-100 p-4 rounded-md overflow-auto max-h-[400px] text-xs font-mono">
                 {createSQL}
               </pre>
             </>

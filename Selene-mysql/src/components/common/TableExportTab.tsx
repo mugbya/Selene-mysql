@@ -46,10 +46,10 @@ export function TableExportTab({ dbKey, dbName, tableName }: TableExportTabProps
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50">
+      <div className="flex items-center justify-between px-4 py-2 border-b bg-muted">
         <div className="flex items-center gap-2">
-          <span className="font-medium">{tableName}</span>
-          <span className="text-sm text-gray-500">表结构</span>
+          <span className="font-medium text-foreground">{tableName}</span>
+          <span className="text-sm text-muted-foreground">表结构</span>
         </div>
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="sm" onClick={loadTableStructure} disabled={loading} title="刷新">
@@ -64,7 +64,7 @@ export function TableExportTab({ dbKey, dbName, tableName }: TableExportTabProps
       <div className="flex-1 overflow-auto p-4">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
           <SyntaxHighlighter

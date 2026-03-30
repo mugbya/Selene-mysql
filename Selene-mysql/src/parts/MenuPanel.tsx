@@ -4,44 +4,43 @@ import { useConnectionStore } from '@/store/useConnectionStore';
 
 
 /**
- * 最左侧的菜单面板 
+ * 最左侧的菜单面板
  */
 export default function MenuPanel({ openSettings, toggleLeft }: MenuPanelProps) {
-    // const { setShowLeftPanel } = useLayoutContext();
-    // const toggleConnectionView  = useMainViewStore((s) => s.toggleConnectionView);
-    const toggleConnectionButton = useConnectionStore((s) => s.toggleConnectionButton);
-    return (
-        <>
-            {/* <div className="p-0 space-y-2 border-r "> */}
-            <div className="p-2 space-y-1 border-r">
-                <div
-                    onClick={toggleConnectionButton}
-                    className="p-1.5 rounded cursor-pointer hover:bg-gray-100 text-blue-600"
-                    title="数据库连接"
-                >
-                    <Database className="w-6 h-6" />
-                </div>
+  // const { setShowLeftPanel } = useLayoutContext();
+  // const toggleConnectionView  = useMainViewStore((s) => s.toggleConnectionView);
+  const toggleConnectionButton = useConnectionStore((s) => s.toggleConnectionButton);
+  return (
+    <>
+      {/* <div className="p-0 space-y-2 border-r "> */}
+      <div className="p-2 space-y-1 border-r">
+        <div
+          onClick={toggleConnectionButton}
+          className="p-1.5 rounded cursor-pointer hover:bg-accent text-primary"
+          title="数据库连接"
+        >
+          <Database className="w-6 h-6" />
+        </div>
 
-                {/* <button
-                    // onClick={() => setShowLeftPanel(true)}
-                    onClick={toggleLeft}
-                    title="打开文件夹树形结构"
-                    className="hover:bg-accent p-2 rounded"
-                >
-                    <Folder className="w-6 h-6" />
-                </button> */}
+        {/* <button
+            // onClick={() => setShowLeftPanel(true)}
+            onClick={toggleLeft}
+            title="打开文件夹树形结构"
+            className="hover:bg-accent p-2 rounded"
+        >
+            <Folder className="w-6 h-6" />
+        </button> */}
 
-                <div
-                    onClick={openSettings}
-                    className="p-1.5 rounded cursor-pointer hover:bg-gray-100 text-gray-600"
-                    title="设置"
-                >
-                    <Settings className="w-6 h-6" />
-                </div>
-            </div>
+        <div
+          onClick={openSettings}
+          className="p-1.5 rounded cursor-pointer hover:bg-accent text-muted-foreground"
+          title="设置"
+        >
+          <Settings className="w-6 h-6" />
+        </div>
+      </div>
 
 
-        </>
-
-    )
+    </>
+  )
 }

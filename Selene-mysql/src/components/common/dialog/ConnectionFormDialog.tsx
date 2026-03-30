@@ -116,8 +116,8 @@ export default function ConnectionFormDialog({
       return (
         <div key={node.id}>
           <div
-            className={`flex items-center gap-1 py-1 px-2 cursor-pointer hover:bg-gray-100 rounded ${
-              form.parentId === node.id ? 'bg-blue-50 text-blue-600' : ''
+            className={`flex items-center gap-1 py-1 px-2 cursor-pointer hover:bg-accent rounded ${
+              form.parentId === node.id ? 'bg-primary/10 text-primary' : ''
             }`}
             style={{ paddingLeft: `${depth * 16 + 8}px` }}
             onClick={() => selectFolder(node.id)}
@@ -125,13 +125,13 @@ export default function ConnectionFormDialog({
             {/* 展开/折叠按钮 */}
             {hasChildren ? (
               <span
-                className="w-3 h-3 flex items-center justify-center cursor-pointer hover:bg-gray-200 rounded"
+                className="w-3 h-3 flex items-center justify-center cursor-pointer hover:bg-accent rounded"
                 onClick={(e) => handleToggleExpand(e, node.id)}
               >
                 {isExpanded ? (
-                  <ChevronDown className="w-3 h-3 text-gray-400" />
+                  <ChevronDown className="w-3 h-3 text-muted-foreground" />
                 ) : (
-                  <ChevronRight className="w-3 h-3 text-gray-400" />
+                  <ChevronRight className="w-3 h-3 text-muted-foreground" />
                 )}
               </span>
             ) : (
@@ -184,7 +184,7 @@ export default function ConnectionFormDialog({
 
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-      <div className="bg-white p-4 rounded border w-[420px] flex flex-col">
+      <div className="bg-background p-4 rounded border border-border w-[420px] flex flex-col">
         <div className='flex items-center gap-2 pb-3 border-b'>
           <SiMysql className="text-yellow-600 w-8 h-8" />
           <h3 className="text-base font-medium">数据库连接</h3>
@@ -193,9 +193,9 @@ export default function ConnectionFormDialog({
         <div className="py-3 space-y-2">
           {/* 文件夹选择 */}
           <div className="relative flex items-center gap-2" ref={folderPickerRef}>
-            <label className="text-xs text-gray-500 w-16 shrink-0">所属文件夹</label>
+            <label className="text-xs text-muted-foreground w-16 shrink-0">所属文件夹</label>
             <div
-              className="flex-1 flex items-center justify-between h-7 px-2 border rounded cursor-pointer hover:bg-gray-50"
+              className="flex-1 flex items-center justify-between h-7 px-2 border border-border rounded cursor-pointer hover:bg-accent text-foreground"
               onClick={() => setFolderPickerOpen(!folderPickerOpen)}
             >
               <div className="flex items-center gap-1">
@@ -207,24 +207,24 @@ export default function ConnectionFormDialog({
                 <span className="text-sm">{getFolderName(form.parentId)}</span>
               </div>
               {folderPickerOpen ? (
-                <ChevronDown className="w-3 h-3 text-gray-400" />
+                <ChevronDown className="w-3 h-3 text-muted-foreground" />
               ) : (
-                <ChevronRight className="w-3 h-3 text-gray-400" />
+                <ChevronRight className="w-3 h-3 text-muted-foreground" />
               )}
             </div>
 
             {/* 树形下拉 */}
             {folderPickerOpen && (
-              <div className="absolute z-10 top-full mt-1 left-16 w-48 bg-white border rounded shadow-lg max-h-48 overflow-auto">
+              <div className="absolute z-10 top-full mt-1 left-16 w-48 bg-background border border-border rounded shadow-lg max-h-48 overflow-auto">
                 {/* 根目录选项 */}
                 <div
-                  className={`flex items-center gap-1 py-1 px-2 cursor-pointer hover:bg-gray-100 ${
-                    form.parentId === null ? 'bg-blue-50 text-blue-600' : ''
+                  className={`flex items-center gap-1 py-1 px-2 cursor-pointer hover:bg-accent ${
+                    form.parentId === null ? 'bg-primary/10 text-primary' : ''
                   }`}
                   onClick={() => selectFolder(null)}
                 >
                   <span className="w-3" />
-                  <FolderClosed className="w-4 h-4 text-gray-400" />
+                  <FolderClosed className="w-4 h-4 text-yellow-500" />
                   <span className="text-sm">根目录</span>
                 </div>
                 {renderFolderTree(rootFolders)}
@@ -234,27 +234,27 @@ export default function ConnectionFormDialog({
 
           {/* 连接名称 */}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500 w-16 shrink-0">名称</label>
+            <label className="text-xs text-muted-foreground w-16 shrink-0">名称</label>
             <Input name="name" value={form.name} onChange={handleChange} placeholder="连接名称" className="!h-7 flex-1" />
           </div>
 
           {/* 主机和端口 */}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500 w-16 shrink-0">主机</label>
+            <label className="text-xs text-muted-foreground w-16 shrink-0">主机</label>
             <Input name="host" value={form.host} onChange={handleChange} placeholder="localhost" className="!h-7 w-40" />
-            <label className="text-xs text-gray-500 w-10 shrink-0">端口</label>
+            <label className="text-xs text-muted-foreground w-10 shrink-0">端口</label>
             <Input name="port" type="number" value={form.port} onChange={handleChange} className="!h-7 w-24" />
           </div>
 
           {/* 用户名 */}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500 w-16 shrink-0">用户名</label>
+            <label className="text-xs text-muted-foreground w-16 shrink-0">用户名</label>
             <Input name="username" value={form.username} onChange={handleChange} placeholder="root" className="!h-7 flex-1" />
           </div>
 
           {/* 密码 */}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500 w-16 shrink-0">密码</label>
+            <label className="text-xs text-muted-foreground w-16 shrink-0">密码</label>
             <div className="flex-1 relative">
               <Input
                 type={showPassword ? "text" : "password"}
@@ -266,7 +266,7 @@ export default function ConnectionFormDialog({
               />
               <span
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </span>
@@ -275,10 +275,10 @@ export default function ConnectionFormDialog({
         </div>
 
         <div className="flex justify-end gap-2 pt-2 border-t">
-          <button className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded" onClick={onClose}>
+          <button className="px-3 py-1 text-sm bg-muted hover:bg-accent rounded text-foreground" onClick={onClose}>
             取消
           </button>
-          <button className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700" onClick={handleSubmit}>
+          <button className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90" onClick={handleSubmit}>
             保存
           </button>
         </div>

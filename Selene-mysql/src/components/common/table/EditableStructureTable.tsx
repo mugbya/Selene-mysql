@@ -269,7 +269,7 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <div className="text-xs text-gray-600">
+        <div className="text-xs text-muted-foreground">
           表名: <span className="font-medium">{tableName}</span>
         </div>
         <div className="flex gap-1">
@@ -297,7 +297,7 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
               <col style={{ width: '200px' }} />
             </colgroup>
             <thead>
-              <tr className="bg-gray-200">
+              <tr className="bg-muted">
                 <th className="px-1 py-1 text-center border-b font-medium"></th>
                 {result.columns.map((col) => (
                   <th
@@ -312,7 +312,7 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
 
             <tbody>
               {displayRows.map((row, rowIndex) => (
-                <tr key={rowIndex} className="bg-gray-50 border-b hover:bg-gray-100">
+                <tr key={rowIndex} className="bg-muted border-b hover:bg-accent">
                   <td className="px-1 py-0.5 text-center">
                     <Trash2
                       className="w-3 h-3 text-red-400 hover:text-red-600 cursor-pointer"
@@ -502,11 +502,11 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
       {generateAlterSQL.length > 0 && (
         <Alert>
           <AlertDescription>
-            <div className="text-xs font-medium text-gray-700 mb-1">
+            <div className="text-xs font-medium text-foreground mb-1">
               SQL ({generateAlterSQL.length})
             </div>
             {generateAlterSQL.map((sql, i) => (
-              <div key={i} className="text-xs font-mono mb-0.5 text-gray-600">
+              <div key={i} className="text-xs font-mono mb-0.5 text-muted-foreground">
                 {sql}
               </div>
             ))}

@@ -142,8 +142,8 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
             className={cn(
               "flex items-center px-3 py-1 mr-1 text-sm rounded-t border border-b-0 cursor-pointer",
               tab.tabId === activeContentId
-                ? "bg-white border-gray-300 font-semibold"
-                : "bg-gray-100 hover:bg-gray-200 text-gray-600"
+                ? "bg-background border-border font-semibold"
+                : "bg-muted hover:bg-accent text-muted-foreground"
             )}
             onClick={() => setActiveContentTab(tab.tabId)}
           >
@@ -160,7 +160,7 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
         ))}
 
         <button
-          className="px-2 py-1 text-sm rounded hover:bg-gray-200 text-gray-600"
+          className="px-2 py-1 text-sm rounded hover:bg-accent text-muted-foreground"
           onClick={() => {
             const id = nanoid();
             // 新建查询页是空白页面
@@ -183,7 +183,7 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
         {(() => {
           if (!activeContentTab) {
             return (
-              <div className="text-center text-gray-400 mt-10">
+              <div className="text-center text-muted-foreground mt-10">
                 没有打开的标签页
               </div>
             );

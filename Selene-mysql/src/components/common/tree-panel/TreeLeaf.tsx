@@ -9,7 +9,7 @@ export function TreeLeaf({
   }) {
     return (
       <div
-        className="flex items-center space-x-2 cursor-pointer hover:text-blue-500"
+        className="flex items-center space-x-2 cursor-pointer hover:text-primary"
         onClick={onClick}
       >
         {icon}

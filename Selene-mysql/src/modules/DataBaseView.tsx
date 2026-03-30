@@ -30,7 +30,7 @@ export default function DataBaseView({ tabId, dbKey, databases, allDatabases }: 
             minSize={125}
             defaultSize={300}
             collapsible
-            className="border border-zinc-300 rounded-md overflow-hidden"
+            className="border border-border rounded-md overflow-hidden"
           >
             <div className="flex flex-col h-full">
               <WorkSpaceTreePanel
@@ -62,7 +62,7 @@ export default function DataBaseView({ tabId, dbKey, databases, allDatabases }: 
             />
             <Panel
               id="right"
-              className="border border-zinc-300 rounded-md overflow-hidden overflow-y-auto"
+              className="border border-border rounded-md overflow-hidden overflow-y-auto"
               minSize={10}
               defaultSize={25}
               collapsible

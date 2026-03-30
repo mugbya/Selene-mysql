@@ -72,7 +72,7 @@ export const TreeNode: React.FC<TreeNodeProps> = ({
   return (
     <div className="select-none">
       <div
-        className="flex items-center gap-1 cursor-pointer px-1 py-1 hover:bg-gray-100 rounded"
+        className="flex items-center gap-1 cursor-pointer px-1 py-1 hover:bg-accent rounded"
         onClick={handleToggle}
       >
         {expanded ? (
@@ -80,7 +80,7 @@ export const TreeNode: React.FC<TreeNodeProps> = ({
         ) : (
           <ChevronRight className="w-4 h-4" />
         )}
-        {icon && <span className="text-gray-500">{icon}</span>}
+        {icon && <span className="text-muted-foreground">{icon}</span>}
         <div className="text-sm font-medium">{label}</div>
       </div>
       {expanded && <div className="ml-5 mt-1 space-y-1">{children}</div>}

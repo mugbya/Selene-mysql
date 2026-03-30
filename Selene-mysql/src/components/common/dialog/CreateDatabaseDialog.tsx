@@ -83,7 +83,7 @@ export function CreateDatabaseDialog({
                 if (e.key === "Enter") handleCreate();
               }}
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               只能包含字母、数字、下划线和连字符，且不能以数字开头
             </p>
           </div>

@@ -12,7 +12,7 @@ export default function MainView({ tabId }: { tabId: string | null }) {
   // 如果没有选中的 tab，显示空状态
   if (!tabId) {
     return (
-      <div className="flex flex-1 items-center justify-center text-gray-400">
+      <div className="flex flex-1 items-center justify-center text-muted-foreground">
         <div className="text-center">
           <p className="text-lg mb-2">暂无内容</p>
           <p className="text-sm">点击左侧菜单打开数据库连接或设置</p>
@@ -27,7 +27,7 @@ export default function MainView({ tabId }: { tabId: string | null }) {
   // 如果没有找到对应的 tab，显示空状态
   if (!currentTab) {
     return (
-      <div className="flex flex-1 items-center justify-center text-gray-400">
+      <div className="flex flex-1 items-center justify-center text-muted-foreground">
         <div className="text-center">
           <p className="text-lg mb-2">暂无内容</p>
           <p className="text-sm">点击左侧菜单打开数据库连接或设置</p>

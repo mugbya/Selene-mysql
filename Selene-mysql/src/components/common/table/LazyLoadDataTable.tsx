@@ -484,7 +484,7 @@ export default function LazyLoadDataTable({
   return (
     <div className="flex flex-col h-full border rounded-md overflow-hidden">
       {/* 功能栏 */}
-      <div className="flex items-center justify-between px-2 py-1 border-b bg-gray-50">
+      <div className="flex items-center justify-between px-2 py-1 border-b bg-muted">
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -495,7 +495,7 @@ export default function LazyLoadDataTable({
           >
             <ChevronLeft className="w-3 h-3" />
           </Button>
-          <span className="text-xs text-gray-700">
+          <span className="text-xs text-foreground">
             {page + 1} / {maxPage + 1}
           </span>
           <Button
@@ -508,7 +508,7 @@ export default function LazyLoadDataTable({
             <ChevronRight className="w-3 h-3" />
           </Button>
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-muted-foreground">
           {Object.keys(filters).length > 0 ? (
             <>显示 {filteredRows.length} / {totalCount} 条</>
           ) : (
@@ -531,7 +531,7 @@ export default function LazyLoadDataTable({
       {/* 表格内容 */}
       <div className="overflow-auto flex-1 font-mono-tight">
         <table className="min-w-full table-fixed border-collapse">
-          <thead className="bg-gray-100 sticky top-0 z-10">
+          <thead className="bg-muted sticky top-0 z-10">
             <tr>
               <th className="border px-1 py-1 text-xs font-semibold">✓</th>
               {columns.map((col, idx) => {
@@ -544,7 +544,7 @@ export default function LazyLoadDataTable({
                   ref={(el) => {
                     if (isFilterActive) setFilterThRef(el);
                   }}
-                  className="border px-1 py-1 text-left text-xs font-semibold text-gray-700 whitespace-nowrap relative"
+                  className="border px-1 py-1 text-left text-xs font-semibold text-foreground whitespace-nowrap relative"
                   style={{ 
                     minWidth: columnWidths[idx]?.default || 100,
                     maxWidth: columnWidths[idx]?.max || 300
@@ -553,7 +553,7 @@ export default function LazyLoadDataTable({
                   <div className="flex items-center gap-0.5 overflow-hidden">
                     <span className="truncate">{col}</span>
                     <Filter
-                      className={`w-3 h-3 flex-shrink-0 cursor-pointer ${hasFilter ? 'text-green-600 fill-green-600' : 'text-gray-400'}`}
+                      className={`w-3 h-3 flex-shrink-0 cursor-pointer ${hasFilter ? 'text-green-600 fill-green-600' : 'text-muted-foreground'}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         setActiveFilterCol(activeFilterCol === idx ? null : idx);
@@ -562,12 +562,12 @@ export default function LazyLoadDataTable({
                   </div>
                   {/* 筛选弹窗 */}
                   {activeFilterCol === idx && (
-                    <div className="absolute top-full left-0 z-20 mt-1 bg-white border rounded p-2" style={{ minWidth: 200, maxHeight: 300, overflow: 'auto' }}>
+                    <div className="absolute top-full left-0 z-20 mt-1 bg-background border border-border rounded p-2" style={{ minWidth: 200, maxHeight: 300, overflow: 'auto' }}>
                       <div className="flex items-center justify-between mb-1 pb-1 border-b">
                         <span className="text-xs font-medium">{col}</span>
                         {hasFilter && (
                           <button
-                            className="text-xs text-blue-600 hover:underline"
+                            className="text-xs text-primary hover:underline"
                             onClick={() => clearFilter(idx)}
                           >
                             清除
@@ -576,7 +576,7 @@ export default function LazyLoadDataTable({
                       </div>
                       <div className="space-y-0.5">
                         {colValues.map(([value, count]) => (
-                          <label key={value} className="flex items-center gap-1 cursor-pointer hover:bg-gray-50 py-0.5">
+                          <label key={value} className="flex items-center gap-1 cursor-pointer hover:bg-accent py-0.5">
                             <input
                               type="checkbox"
                               className="w-3 h-3"
@@ -584,7 +584,7 @@ export default function LazyLoadDataTable({
                               onChange={() => toggleFilterValue(idx, value)}
                             />
                             <span className="text-xs truncate flex-1" title={value}>{value}</span>
-                            <span className="text-xs text-gray-400">({count})</span>
+                            <span className="text-xs text-muted-foreground">({count})</span>
                           </label>
                         ))}
                       </div>
@@ -598,7 +598,7 @@ export default function LazyLoadDataTable({
             {filteredRows.map((row, rowIdx) => (
               <tr
                 key={rowIdx}
-                className={`even:bg-gray-50 ${selectedRows.has(rowIdx) ? 'bg-blue-100' : ''}`}
+                className={`even:bg-muted ${selectedRows.has(rowIdx) ? 'bg-primary/10' : ''}`}
               >
                 <td className="border px-1 text-center">
                   <input
@@ -616,7 +616,7 @@ export default function LazyLoadDataTable({
                   return (
                     <td
                       key={colIdx}
-                      className={`border px-2 py-1 text-xs text-gray-800 ${isExpanded ? '' : 'whitespace-nowrap'}`}
+                      className={`border px-2 py-1 text-xs text-foreground ${isExpanded ? '' : 'whitespace-nowrap'}`}
                       style={{
                         minWidth: colWidth?.default || 100,
                         maxWidth: colWidth?.max || 300,
@@ -663,7 +663,7 @@ export default function LazyLoadDataTable({
               <tr>
                 <td
                   colSpan={columns.length + 1}
-                  className="text-center text-xs text-gray-400 py-6"
+                  className="text-center text-xs text-muted-foreground py-6"
                 >
                   暂无数据
                 </td>
@@ -673,7 +673,7 @@ export default function LazyLoadDataTable({
               <tr>
                 <td
                   colSpan={columns.length + 1}
-                  className="text-center text-xs text-gray-400 py-6"
+                  className="text-center text-xs text-muted-foreground py-6"
                 >
                   加载中...
                 </td>
@@ -685,15 +685,15 @@ export default function LazyLoadDataTable({
 
       {/* SQL 编辑区 */}
       {sqlOutput.length > 0 && (
-        <div className="border-t bg-gray-50 p-2 text-xs">
-          <label className="block font-medium text-gray-700 mb-1">
+        <div className="border-t bg-muted p-2 text-xs">
+          <label className="block font-medium text-foreground mb-1">
             生成的 SQL：
           </label>
           <textarea
             value={sqlOutput.join("\n")}
             onChange={(e) => setSqlOutput(e.target.value.split("\n"))}
             rows={6}
-            className="w-full border rounded p-2 font-mono text-xs text-gray-800"
+            className="w-full border rounded p-2 font-mono text-xs text-foreground"
           />
         </div>
       )}

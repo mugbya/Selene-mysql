@@ -232,9 +232,9 @@ export const SqlMonacoEditor: React.FC<ExecResultProps & { execResult?: ExecResu
       {execResult && (
         <div className="flex-1 min-h-0 border-t overflow-auto p-2 flex flex-col">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">执行结果</span>
+            <span className="text-sm font-medium text-foreground">执行结果</span>
             <span
-              className="text-gray-400 hover:text-gray-600 cursor-pointer"
+              className="text-muted-foreground hover:text-foreground cursor-pointer"
               onClick={onClearResult}
               title="关闭结果"
             >

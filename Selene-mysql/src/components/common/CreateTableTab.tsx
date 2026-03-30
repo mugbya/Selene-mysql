@@ -233,7 +233,7 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
   return (
     <div className="flex flex-col h-full">
       {/* 工具栏 */}
-      <div className="flex items-center gap-4 p-2 border-b bg-gray-50">
+      <div className="flex items-center gap-4 p-2 border-b bg-muted">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">表名:</span>
           <Input
@@ -257,7 +257,7 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
 
       {/* 执行结果区域 */}
       {execResult && (
-        <div className={`px-2 py-1 text-sm ${execResult.success ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+        <div className={`px-2 py-1 text-sm ${execResult.success ? "bg-green-500/10 text-green-600" : "bg-destructive/10 text-destructive"}`}>
           {execResult.success ? "✓ " : "✗ "}
           {execResult.message}
         </div>
@@ -267,7 +267,7 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
       <div className="flex-1 overflow-auto p-2">
         <div className="border rounded-md">
           {/* 表头 */}
-          <div className="grid grid-cols-12 gap-2 p-2 bg-gray-50 text-xs font-medium text-gray-600">
+          <div className="grid grid-cols-12 gap-2 p-2 bg-muted text-xs font-medium text-muted-foreground">
             <div className="col-span-2">字段名</div>
             <div className="col-span-2">类型</div>
             <div className="col-span-1">长度</div>
@@ -366,7 +366,7 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 text-red-500 hover:text-red-600"
+                  className="h-6 w-6 text-destructive hover:text-destructive/80"
                   onClick={() => removeColumn(col.id)}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -378,9 +378,9 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
       </div>
 
       {/* SQL 预览 */}
-      <div className="border-t p-2 bg-gray-50">
+      <div className="border-t p-2 bg-muted">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium text-gray-600">SQL 预览:</span>
+          <span className="text-xs font-medium text-muted-foreground">SQL 预览:</span>
           <Button
             variant="ghost"
             size="sm"
@@ -395,7 +395,7 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
             )}
           </Button>
         </div>
-        <pre className="font-mono-tight bg-white p-2 border rounded overflow-x-auto whitespace-pre-wrap">
+        <pre className="font-mono-tight bg-background p-2 border rounded overflow-x-auto whitespace-pre-wrap">
           {generateSQL()}
         </pre>
       </div>

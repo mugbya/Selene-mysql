@@ -56,18 +56,18 @@ export function TableVisibilityDialog({
 
         {/* ✅ 全选/清除操作区 */}
         <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-muted-foreground">
             已选中 {selected.length} / {tables.length} 个
             </span>
             <div className="space-x-2">
             <button
-                className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded"
+                className="px-2 py-1 text-xs bg-muted hover:bg-accent rounded text-foreground"
                 onClick={() => setSelected([...tables])}
             >
                 全选
             </button>
             <button
-                className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded"
+                className="px-2 py-1 text-xs bg-muted hover:bg-accent rounded text-foreground"
                 onClick={() => setSelected([])}
             >
                 清除
@@ -80,7 +80,7 @@ export function TableVisibilityDialog({
           {tables.map((table) => (
             <label
               key={table}
-              className="flex items-center space-x-2 p-1 rounded hover:bg-gray-100 cursor-pointer"
+              className="flex items-center space-x-2 p-1 rounded hover:bg-accent cursor-pointer"
             >
               <input
                 type="checkbox"
@@ -92,7 +92,7 @@ export function TableVisibilityDialog({
           ))}
         </div>
         <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onClose} className="px-3 py-1 bg-gray-300 rounded">
+          <button onClick={onClose} className="px-3 py-1 bg-muted rounded text-foreground">
             取消
           </button>
           <button
@@ -100,7 +100,7 @@ export function TableVisibilityDialog({
               onSave(selected);
               onClose();
             }}
-            className="px-3 py-1 bg-blue-600 text-white rounded"
+            className="px-3 py-1 bg-primary text-primary-foreground rounded"
           >
             保存
           </button>

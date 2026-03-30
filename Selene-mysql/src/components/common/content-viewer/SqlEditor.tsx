@@ -18,7 +18,7 @@ export default function SqlEditor() {
       <button
         onClick={() => setSqlCode(format(sqlCode))}
         style={{ marginTop: 8 }}
-        className="px-3 py-1 rounded border bg-blue-500 text-white"
+        className="px-3 py-1 rounded border bg-primary text-primary-foreground"
       >
         格式化
       </button>
