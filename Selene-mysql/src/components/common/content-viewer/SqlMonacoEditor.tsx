@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import Editor, { OnMount } from "@monaco-editor/react";
 import { format } from "sql-formatter";
 import { editor as MonacoEditor } from "monaco-editor";
@@ -9,6 +9,7 @@ import { ExecResult, ExecResultProps } from "@/types";
 import { EditableResultTable } from "@/modules/ExecResultTable";
 import { X } from "lucide-react";
 
+// 使用本地 Monaco（通过 vite optimizeDeps 预加载）
 // export default function SqlMonacoEditor({dbKey}: { dbKey: string | null }) {
 export const SqlMonacoEditor: React.FC<ExecResultProps & { execResult?: ExecResult; onClearResult?: () => void; onSave?: () => void; onSaveAs?: () => void; onContentChange?: (content: string) => void }> = ({
   dbKey,
@@ -22,12 +23,13 @@ export const SqlMonacoEditor: React.FC<ExecResultProps & { execResult?: ExecResu
 }) => {
   // 获取当前主题
   const [editorTheme, setEditorTheme] = useState("vs-light");
+  const [monacoLoaded, setMonacoLoaded] = useState(false);
 
   // 注册自定义 Monaco 主题
-  useEffect(() => {
+  const defineThemes = useCallback(() => {
     // 只有在 monaco 可用时注册主题
     const monaco = (window as any).monaco;
-    if (!monaco) return;
+    if (!monaco) return false;
 
     // 蓝色主题
     monaco.editor.defineTheme('theme-blue-monaco', {
@@ -88,9 +90,36 @@ export const SqlMonacoEditor: React.FC<ExecResultProps & { execResult?: ExecResu
         'editor.lineHighlightBackground': '#ffedd5',
       },
     });
+    return true;
   }, []);
 
+  // 等待 Monaco 加载完成后设置主题
   useEffect(() => {
+    // Monaco 默认会在首次使用时自动加载
+    // 我们通过检查 monaco 是否可用来判断是否加载完成
+    const checkMonaco = setInterval(() => {
+      if ((window as any).monaco) {
+        clearInterval(checkMonaco);
+        setMonacoLoaded(true);
+        defineThemes();
+      }
+    }, 100);
+
+    // 最多等待 10 秒
+    setTimeout(() => {
+      clearInterval(checkMonaco);
+      if ((window as any).monaco) {
+        setMonacoLoaded(true);
+        defineThemes();
+      }
+    }, 10000);
+
+    return () => clearInterval(checkMonaco);
+  }, [defineThemes]);
+
+  useEffect(() => {
+    if (!monacoLoaded) return;
+
     const savedTheme = localStorage.getItem('theme') || 'light';
     if (savedTheme === 'dark') {
       setEditorTheme("vs-dark");
@@ -100,10 +129,12 @@ export const SqlMonacoEditor: React.FC<ExecResultProps & { execResult?: ExecResu
     } else {
       setEditorTheme("vs-light");
     }
-  }, []);
+  }, [monacoLoaded]);
 
   // 监听主题变化
   useEffect(() => {
+    if (!monacoLoaded) return;
+
     const handleThemeChange = () => {
       const savedTheme = localStorage.getItem('theme') || 'light';
       if (savedTheme === 'dark') {
@@ -130,7 +161,7 @@ export const SqlMonacoEditor: React.FC<ExecResultProps & { execResult?: ExecResu
       window.removeEventListener('theme-changed', handleThemeChange);
       window.removeEventListener('storage', storageListener);
     };
-  }, []);
+  }, [monacoLoaded]);
   // const [code, setCode] = useState("SELECT * FROM users WHERE id = 1;");
   const [code, setCode] = useState(initialContent || "");
   const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
