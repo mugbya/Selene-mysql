@@ -448,6 +448,12 @@ function WorkSpaceTreePanel({
         onClose={() => setVisibleTableDialogOpen(false)}
         tables={dialogTargetDB?.tables ?? []}
         visibleTables={dialogTargetDB?.visibleTables ?? []}
+        tablesCount={dialogTargetDB?.tablesCount}
+        onLoadTables={() => {
+          if (dialogTargetDB?.tables?.length === 0) {
+            loadTables(dialogTargetDB.name);
+          }
+        }}
         onSave={(selected) => {
           if (dialogTargetDB) {
             setDBTrees((prev) =>

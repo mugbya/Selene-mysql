@@ -5,25 +5,30 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
+import { Check, X, CheckSquare, XCircle, Save, List } from "lucide-react";
 
 interface TableVisibilityDialogProps {
   open: boolean;
   onClose: () => void;
   tables: string[];
   visibleTables: string[];
+  tablesCount?: number;
+  onLoadTables?: () => void;
   onSave: (selected: string[]) => void;
 }
 
 /**
  * 表显示控制弹窗
- * @param param0 
- * @returns 
+ * @param param0
+ * @returns
  */
 export function TableVisibilityDialog({
   open,
   onClose,
   tables,
   visibleTables,
+  tablesCount,
+  onLoadTables,
   onSave,
 }: TableVisibilityDialogProps) {
   const [selected, setSelected] = useState<string[]>(visibleTables);
@@ -31,79 +36,144 @@ export function TableVisibilityDialog({
   useEffect(() => {
     if (open) {
       setSelected(visibleTables);
+      // 如果没有表数据且有加载函数，则触发加载
+      if (tables.length === 0 && onLoadTables) {
+        onLoadTables();
+      }
     }
-  }, [open, visibleTables]);
-  
+  }, [open, visibleTables, tables.length, onLoadTables]);
+
   const toggle = (table: string) => {
     setSelected((prev) =>
       prev.includes(table) ? prev.filter((t) => t !== table) : [...prev, table]
     );
   };
-  //   const toggle = (table: string, checked: boolean | "indeterminate") => {
-  //     if (checked === true) {
-  //       setSelected((prev) => [...prev, table]);
-  //     } else {
-  //       setSelected((prev) => prev.filter((t) => t !== table));
-  //     }
-  //   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>表显示控制</DialogTitle>
+      <DialogContent className="max-w-md" style={{ padding: '16px' }}>
+        <DialogHeader style={{ marginBottom: '12px' }}>
+          <DialogTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <List className="w-4 h-4" />
+            表显示控制
+          </DialogTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            选择需要在树形视图中显示的表
+          </p>
         </DialogHeader>
 
-        {/* ✅ 全选/清除操作区 */}
-        <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-muted-foreground">
-            已选中 {selected.length} / {tables.length} 个
-            </span>
-            <div className="space-x-2">
-            <button
-                className="px-2 py-1 text-xs bg-muted hover:bg-accent rounded text-foreground"
-                onClick={() => setSelected([...tables])}
+        {/* 操作栏 */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '12px',
+            padding: '8px 12px',
+            backgroundColor: 'var(--muted)',
+            borderRadius: '6px',
+          }}
+        >
+          <span className="text-sm" style={{ color: 'var(--foreground)' }}>
+            已选择 <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{selected.length}</span> / {tablesCount ?? tables.length} 个
+          </span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <div
+              className="p-1.5 hover:bg-accent rounded cursor-pointer"
+              onClick={() => setSelected(tables.length > 0 ? [...tables] : (tablesCount ? Array.from({ length: tablesCount }, (_, i) => `table_${i}`) : []))}
+              title="全选"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-                全选
-            </button>
-            <button
-                className="px-2 py-1 text-xs bg-muted hover:bg-accent rounded text-foreground"
-                onClick={() => setSelected([])}
-            >
-                清除
-            </button>
+              <CheckSquare className="w-4 h-4" style={{ color: 'var(--foreground)' }} />
             </div>
+            <div
+              className="p-1.5 hover:bg-accent rounded cursor-pointer"
+              onClick={() => setSelected([])}
+              title="清除"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <XCircle className="w-4 h-4" style={{ color: 'var(--foreground)' }} />
+            </div>
+          </div>
         </div>
 
-        {/* ✅ 表列表 */}
-        <div className="space-y-2 max-h-[300px] overflow-auto">
-          {tables.map((table) => (
-            <label
+        {/* 表列表 */}
+        <div
+          style={{
+            maxHeight: '300px',
+            overflowY: 'auto',
+            border: '1px solid var(--border)',
+            borderRadius: '6px',
+          }}
+        >
+          {tables.length > 0 ? tables.map((table) => (
+            <div
               key={table}
-              className="flex items-center space-x-2 p-1 rounded hover:bg-accent cursor-pointer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 12px',
+                cursor: 'pointer',
+                borderBottom: '1px solid var(--border)',
+                backgroundColor: selected.includes(table) ? 'var(--accent)' : 'transparent',
+              }}
+              onClick={() => toggle(table)}
+              onMouseEnter={(e) => {
+                if (!selected.includes(table)) {
+                  e.currentTarget.style.backgroundColor = 'var(--muted)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!selected.includes(table)) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }
+              }}
             >
-              <input
-                type="checkbox"
-                checked={selected.includes(table)}
-                onChange={() => toggle(table)}
-              />
-              <span>{table}</span>
-            </label>
-          ))}
+              <div
+                style={{
+                  width: '16px',
+                  height: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid var(--border)',
+                  borderRadius: '3px',
+                  backgroundColor: selected.includes(table) ? 'var(--primary)' : 'transparent',
+                }}
+              >
+                {selected.includes(table) && <Check className="w-3 h-3" style={{ color: 'var(--primary-foreground)' }} />}
+              </div>
+              <span className="text-sm" style={{ color: 'var(--foreground)' }}>{table}</span>
+            </div>
+          )) : tablesCount ? (
+            <div style={{ padding: '12px', textAlign: 'center', color: 'var(--muted-foreground)' }}>
+              正在加载表列表...
+            </div>
+          ) : null}
         </div>
-        <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onClose} className="px-3 py-1 bg-muted rounded text-foreground">
-            取消
-          </button>
-          <button
+
+        {/* 底部操作 */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
+          <div
+            onClick={onClose}
+            className="p-2 hover:bg-accent rounded cursor-pointer"
+            title="取消"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <X className="w-4 h-4" style={{ color: 'var(--foreground)' }} />
+          </div>
+          <div
             onClick={() => {
               onSave(selected);
               onClose();
             }}
-            className="px-3 py-1 bg-primary text-primary-foreground rounded"
+            className="p-2 hover:bg-accent rounded cursor-pointer"
+            title="保存"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            保存
-          </button>
+            <Save className="w-4 h-4" style={{ color: 'var(--primary)' }} />
+          </div>
         </div>
       </DialogContent>
     </Dialog>
