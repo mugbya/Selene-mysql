@@ -201,9 +201,17 @@ export default function LazyLoadDataTable({
 
   const offset = page * pageSize;
 
+  // 记录原始数据用于对比（只在首次加载时更新）
+  const initialLoadDone = useRef(false);
+
   const fetchData = async () => {
     console.log('[LazyLoadDataTable] fetchData 开始');
     setLoading(true);
+    // 在获取新数据前重置状态
+    setDirtyRows(new Set());
+    setNewRows([]);
+    initialLoadDone.current = false;
+
     const result = await loadData(offset, pageSize);
     console.log('[LazyLoadDataTable] fetchData result:', result);
     if (result) {
@@ -213,6 +221,15 @@ export default function LazyLoadDataTable({
     }
     setLoading(false);
   };
+
+  // 在 dataRows 更新后保存原始数据（只在首次加载后保存）
+  useEffect(() => {
+    if (!initialLoadDone.current && dataRows.length > 0) {
+      originalDataRef.current = dataRows.map(row => [...row]);
+      initialLoadDone.current = true;
+      console.log('[LazyLoadDataTable] 首次加载数据，保存原始数据');
+    }
+  }, [dataRows]);
 
   useEffect(() => {
     console.log('[LazyLoadDataTable] useEffect - dbName:', dbName, 'tableName:', tableName, 'page:', page);
@@ -311,11 +328,6 @@ export default function LazyLoadDataTable({
     }
   }, [columns, primaryKey]);
 
-  // 存储原始数据用于对比
-  useEffect(() => {
-    originalDataRef.current = dataRows;
-  }, [dataRows]);
-
   const handleAddRow = () => {
     console.log('[LazyLoadDataTable] handleAddRow - columns:', columns, 'columns.length:', columns.length, 'loading:', loading);
     // 如果数据还没加载完成或者 columns 为空，不允许添加
@@ -351,6 +363,8 @@ export default function LazyLoadDataTable({
   };
 
   const handleCellChange = (rowIdx: number, colIdx: number, value: string) => {
+    console.log('[LazyLoadDataTable] handleCellChange - rowIdx:', rowIdx, 'colIdx:', colIdx, 'value:', value);
+    console.log('[LazyLoadDataTable] handleCellChange - primaryKey:', primaryKey, 'primaryKeyColumnIndex:', primaryKeyColumnIndex);
     if (!primaryKey || primaryKeyColumnIndex === null) {
       toast.error('无法编辑：表没有主键');
       return;
@@ -359,7 +373,8 @@ export default function LazyLoadDataTable({
     const key = `${rowIdx}-${colIdx}`;
     setEditState((prev) => ({ ...prev, [key]: value }));
 
-    const newDataRows = [...dataRows];
+    // 深拷贝整个 dataRows，确保不修改原始数据
+    const newDataRows = dataRows.map(row => [...row]);
     newDataRows[rowIdx][colIdx] = value;
     setDataRows(newDataRows);
 
@@ -423,7 +438,7 @@ export default function LazyLoadDataTable({
       // 执行删除
       let successCount = 0;
       for (const { pkValue } of rowsToDelete) {
-        const sql = `DELETE FROM \`${tableName}\` WHERE \`${primaryKey}\` = '${pkValue.replace(/'/g, "''")}'`;
+        const sql = `DELETE FROM \`${dbName}\`.\`${tableName}\` WHERE \`${primaryKey}\` = '${pkValue.replace(/'/g, "''")}'`;
         console.log('[LazyLoadDataTable] Executing delete:', sql);
         const result = await executeSQL(dbKey!, sql);
         if (result.success) {
@@ -447,15 +462,19 @@ export default function LazyLoadDataTable({
   };
 
   const handleSave = async () => {
+    console.log('[LazyLoadDataTable] handleSave - dbKey:', dbKey, 'dirtyRows:', dirtyRows, 'newRows:', newRows);
     if (!dbKey) {
       toast.error('数据库连接失败');
       return;
     }
 
     if (newRows.length === 0 && dirtyRows.size === 0) {
+      console.log('[LazyLoadDataTable] 没有需要保存的更改');
       toast.info('没有需要保存的更改');
       return;
     }
+
+    console.log('[LazyLoadDataTable] 开始处理保存, dirtyRows size:', dirtyRows.size, 'newRows length:', newRows.length);
 
     let successCount = 0;
     let errorCount = 0;
@@ -473,7 +492,7 @@ export default function LazyLoadDataTable({
         return `'${val.replace(/'/g, "''")}'`;
       }).join(', ');
 
-      const sql = `INSERT INTO \`${tableName}\` (${columnsList}) VALUES (${valuesList})`;
+      const sql = `INSERT INTO \`${dbName}\`.\`${tableName}\` (${columnsList}) VALUES (${valuesList})`;
       console.log('[LazyLoadDataTable] Executing insert:', sql);
 
       const result = await executeSQL(dbKey, sql);
@@ -487,13 +506,20 @@ export default function LazyLoadDataTable({
 
     // 处理更新（编辑过的行）
     for (const rowIdx of dirtyRows) {
+      console.log('[LazyLoadDataTable] 处理更新, rowIdx:', rowIdx);
       const row = dataRows[rowIdx];
       const originalRow = originalDataRef.current[rowIdx];
-      if (!row || !originalRow) continue;
+      console.log('[LazyLoadDataTable] row:', row);
+      console.log('[LazyLoadDataTable] originalRow:', originalRow);
+      if (!row || !originalRow) {
+        console.log('[LazyLoadDataTable] 跳过: row 或 originalRow 不存在');
+        continue;
+      }
 
       // 找出变更的列
       const changes: string[] = [];
       for (let i = 0; i < columns.length; i++) {
+        console.log(`[LazyLoadDataTable] 比较列 ${i}: "${row[i]}" vs "${originalRow[i]}" - 相等: ${row[i] === originalRow[i]}`);
         if (row[i] !== originalRow[i]) {
           const colName = columns[i];
           const newValue = row[i] || '';
@@ -501,16 +527,27 @@ export default function LazyLoadDataTable({
         }
       }
 
-      if (changes.length === 0) continue;
+      console.log('[LazyLoadDataTable] changes:', changes);
+
+      if (changes.length === 0) {
+        console.log('[LazyLoadDataTable] 跳过: 没有变更');
+        continue;
+      }
 
       // 获取主键值
+      console.log('[LazyLoadDataTable] primaryKeyColumnIndex:', primaryKeyColumnIndex, 'primaryKey:', primaryKey);
       const pkValue = row[primaryKeyColumnIndex];
-      if (!pkValue) continue;
+      console.log('[LazyLoadDataTable] pkValue:', pkValue);
+      if (!pkValue) {
+        console.log('[LazyLoadDataTable] 跳过: 主键值为空');
+        continue;
+      }
 
-      const sql = `UPDATE \`${tableName}\` SET ${changes.join(', ')} WHERE \`${primaryKey}\` = '${pkValue.replace(/'/g, "''")}'`;
+      const sql = `UPDATE \`${dbName}\`.\`${tableName}\` SET ${changes.join(', ')} WHERE \`${primaryKey}\` = '${pkValue.replace(/'/g, "''")}'`;
       console.log('[LazyLoadDataTable] Executing update:', sql);
 
       const result = await executeSQL(dbKey, sql);
+      console.log('[LazyLoadDataTable] update result:', result);
       if (result.success) {
         successCount++;
       } else {
