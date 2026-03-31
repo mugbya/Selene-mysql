@@ -50,25 +50,30 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
   const currentDbName = activeTab?.currentDb || "";
   const activeContentTab = getActiveContent();
 
+  // 过滤出属于当前连接的内容 tab
+  const currentConnectionContentTabs = contentTabs.filter(tab => tab.dbKey === dbKey);
+  // 当前活动的内容 tab（也需要属于当前连接）
+  const currentActiveContentTab = currentConnectionContentTabs.find(tab => tab.tabId === activeContentId) || currentConnectionContentTabs[0];
+
   // 处理保存（更新已保存的查询）
   const handleSave = () => {
-    if (!activeContentTab || !dbKey) return;
+    if (!currentActiveContentTab || !dbKey) return;
 
-    const content = activeContentTab.content || "";
+    const content = currentActiveContentTab.content || "";
     if (!content.trim()) {
       toast.warning("没有内容可保存");
       return;
     }
 
     // 如果已经有 savedQueryId，直接更新
-    if (activeContentTab.savedQueryId) {
+    if (currentActiveContentTab.savedQueryId) {
       // 获取保存的查询名称
-      const savedQuery = savedQueries.find(q => q.id === activeContentTab.savedQueryId);
-      updateSavedQuery(activeContentTab.savedQueryId, {
-        name: savedQuery?.name || activeContentTab.title,
+      const savedQuery = savedQueries.find(q => q.id === currentActiveContentTab.savedQueryId);
+      updateSavedQuery(currentActiveContentTab.savedQueryId, {
+        name: savedQuery?.name || currentActiveContentTab.title,
         content,
         dbKey,
-        databaseName: activeContentTab.databaseName,
+        databaseName: currentActiveContentTab.databaseName,
       });
       toast.success("查询已更新");
     } else {
@@ -81,35 +86,35 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
 
   // 处理另存为
   const handleSaveAs = () => {
-    if (!activeContentTab || !dbKey) return;
+    if (!currentActiveContentTab || !dbKey) return;
 
-    const content = activeContentTab.content || "";
+    const content = currentActiveContentTab.content || "";
     if (!content.trim()) {
       toast.warning("没有内容可保存");
       return;
     }
 
     // 获取当前名称作为默认名称
-    setDialogInitialName(activeContentTab.title === "新建查询" ? "" : activeContentTab.title);
+    setDialogInitialName(currentActiveContentTab.title === "新建查询" ? "" : currentActiveContentTab.title);
     setSaveAsMode(true);
     setSaveDialogOpen(true);
   };
 
   const handleSaveQuery = (name: string) => {
-    if (!activeContentTab || !dbKey) return;
+    if (!currentActiveContentTab || !dbKey) return;
 
-    const content = activeContentTab.content || "";
+    const content = currentActiveContentTab.content || "";
 
     // 如果已经有 savedQueryId，说明是更新已保存的查询
-    if (activeContentTab.savedQueryId) {
-      updateSavedQuery(activeContentTab.savedQueryId, {
+    if (currentActiveContentTab.savedQueryId) {
+      updateSavedQuery(currentActiveContentTab.savedQueryId, {
         name,
         content,
         dbKey,
-        databaseName: activeContentTab.databaseName,
+        databaseName: currentActiveContentTab.databaseName,
       });
       // 更新 tab 标题
-      updateContentTitle(activeContentTab.tabId, name);
+      updateContentTitle(currentActiveContentTab.tabId, name);
       toast.success("查询已更新");
     } else {
       // 新建保存的查询
@@ -117,26 +122,26 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
         name,
         content,
         dbKey,
-        databaseName: activeContentTab.databaseName,
+        databaseName: currentActiveContentTab.databaseName,
       });
 
       // 更新 tab 状态
-      setContentSavedQueryId(activeContentTab.tabId, newQuery.id);
+      setContentSavedQueryId(currentActiveContentTab.tabId, newQuery.id);
       // 更新 tab 标题
-      updateContentTitle(activeContentTab.tabId, name);
+      updateContentTitle(currentActiveContentTab.tabId, name);
 
       toast.success("查询已保存");
     }
   };
 
   // if (!activeContentTab) return null;
-  
+
 
   return (
     <main className="flex flex-col flex-1 h-full pr-1.5">
       {/* Tabs Header */}
       <div className="flex items-center border-b bg-muted p-1">
-        {contentTabs.map((tab) => (
+        {currentConnectionContentTabs.map((tab) => (
           <div
             key={tab.tabId}
             className={cn(
@@ -170,6 +175,7 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
               content: "",
               isSaved: false,
               tabType: "query",
+              dbKey,
             });
           }}
         >
@@ -181,7 +187,7 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
       <div className="flex-1 overflow-auto p-2">
         <div className="flex flex-col flex-1 h-full overflow-auto resize-none font-mono-tight p-2 " style={{ border: "1px solid var(--border)", borderRadius: "0.375rem" }}>
         {(() => {
-          if (!activeContentTab) {
+          if (!currentActiveContentTab) {
             return (
               <div className="text-center text-muted-foreground mt-10">
                 没有打开的标签页
@@ -189,37 +195,37 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
             );
           }
 
-          if (activeContentTab.tabType === "query") {
+          if (currentActiveContentTab.tabType === "query") {
               return (
                 <SqlMonacoEditor
-                  key={activeContentTab.tabId}
+                  key={currentActiveContentTab.tabId}
                   dbKey={dbKey}
                   onExecResult={(result) => {
                     if (onExecResult) {
                       onExecResult(result);
                     }
-                    updateContentExecResult(activeContentTab.tabId, result);
+                    updateContentExecResult(currentActiveContentTab.tabId, result);
                   }}
-                  initialContent={activeContentTab.content}
-                  execResult={activeContentTab.execResult}
+                  initialContent={currentActiveContentTab.content}
+                  execResult={currentActiveContentTab.execResult}
                   onClearResult={() => {
-                    updateContentExecResult(activeContentTab.tabId, undefined);
+                    updateContentExecResult(currentActiveContentTab.tabId, undefined);
                   }}
                   onSave={handleSave}
                   onSaveAs={handleSaveAs}
                   onContentChange={(content) => {
-                    updateContentContent(activeContentTab.tabId, content);
+                    updateContentContent(currentActiveContentTab.tabId, content);
                   }}
                 />
               );
-          } else if (activeContentTab.tabType === "tableView") {
-            return <TableViewTab key={activeContentTab.tabId} dbkey={dbKey} dbName={activeContentTab.databaseName || ""} tableName={activeContentTab.tableName || ""} />;
-          } else if (activeContentTab.tabType === "tableStructure") {
-            return <EditableStructureTable key={activeContentTab.tabId} dbKey={dbKey} dbName={activeContentTab.databaseName || ""} tableName={activeContentTab.tableName || ""} result={activeContentTab.execResult!} />;
-          } else if (activeContentTab.tabType === "tableExport") {
-            return <TableExportTab key={activeContentTab.tabId} dbKey={dbKey} dbName={activeContentTab.databaseName || ""} tableName={activeContentTab.tableName || ""} />;
-          } else if (activeContentTab.tabType === "createTable") {
-            return <CreateTableTab key={activeContentTab.tabId} dbKey={dbKey} dbName={activeContentTab.databaseName || ""} tableName={activeContentTab.tableName || ""} />;
+          } else if (currentActiveContentTab.tabType === "tableView") {
+            return <TableViewTab key={currentActiveContentTab.tabId} dbkey={dbKey} dbName={currentActiveContentTab.databaseName || ""} tableName={currentActiveContentTab.tableName || ""} />;
+          } else if (currentActiveContentTab.tabType === "tableStructure") {
+            return <EditableStructureTable key={currentActiveContentTab.tabId} dbKey={dbKey} dbName={currentActiveContentTab.databaseName || ""} tableName={currentActiveContentTab.tableName || ""} result={currentActiveContentTab.execResult!} />;
+          } else if (currentActiveContentTab.tabType === "tableExport") {
+            return <TableExportTab key={currentActiveContentTab.tabId} dbKey={dbKey} dbName={currentActiveContentTab.databaseName || ""} tableName={currentActiveContentTab.tableName || ""} />;
+          } else if (currentActiveContentTab.tabType === "createTable") {
+            return <CreateTableTab key={currentActiveContentTab.tabId} dbKey={dbKey} dbName={currentActiveContentTab.databaseName || ""} tableName={currentActiveContentTab.tableName || ""} />;
           }
           else {
             return <div>未知类型</div>;

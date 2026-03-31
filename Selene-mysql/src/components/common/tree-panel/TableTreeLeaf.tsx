@@ -43,6 +43,7 @@ export function TableTreeLeaf({
         databaseName: `${dbName}`,
         tableName: `${tableName}`,
         isSaved: false,
+        dbKey: dbkey,
       });
       return;
     }
@@ -61,6 +62,7 @@ export function TableTreeLeaf({
       // execResult: result.data,
       // queryId: crypto.randomUUID(), // 如果是已有的查询，可保存其 ID
       isSaved: false,
+      dbKey: dbkey,
     });
   };
 
@@ -200,6 +202,7 @@ export function TableTreeLeaf({
       execResult: new_result,
       // queryId: crypto.randomUUID(), // 如果是已有的查询，可保存其 ID
       isSaved: false,
+      dbKey: dbkey,
     });
   }
 
@@ -254,6 +257,7 @@ export function TableTreeLeaf({
               tabType: "tableExport",
               databaseName: dbName,
               tableName: tableName,
+              dbKey: dbkey,
             });
           }}>导出表结构</ContextMenuItem>
           {/* <ContextMenuSeparator /> */}
