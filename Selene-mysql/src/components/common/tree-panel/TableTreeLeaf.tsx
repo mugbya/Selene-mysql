@@ -37,7 +37,7 @@ export function TableTreeLeaf({
       const errorMsg = String(result.message);
       openContentTab({
         tabId: `query_${dbName}.${tableName}`,
-        title: `${tableName}`,
+        title: `${dbName} - ${tableName}`,
         tabType: "query",
         content: `-- 查询失败\n-- ${errorMsg}\n\n${text}`,
         databaseName: `${dbName}`,
@@ -54,7 +54,7 @@ export function TableTreeLeaf({
 
     openContentTab({
       tabId: `data_${dbName}.${tableName}`,
-      title: `${tableName}`,
+      title: `${dbName} - ${tableName}`,
       tabType: "tableView",
       databaseName: `${dbName}`,
       tableName: `${tableName}`,
@@ -193,7 +193,7 @@ export function TableTreeLeaf({
 
     openContentTab({
       tabId: `struct_${dbName}.${tableName}`,
-      title: `设计${tableName}`,
+      title: `设计${dbName} - ${tableName}`,
       tabType: "tableStructure",
       databaseName: `${dbName}`,
       tableName: `${tableName}`,
