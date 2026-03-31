@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { ExecResult } from "@/types";
 import LazyLoadDataTable from "./table/LazyLoadDataTable";
 import { executeSQL } from "@/db/msyql-client";
@@ -113,11 +112,11 @@ export const TableViewTab = ({
     const result = await executeSQL(dbkey, sql);
     console.log('[TableViewTab] loadData result:', JSON.stringify(result));
     if (!result.success) {
-      toast.error(`查询失败 ${result.message}`, { closeButton: true });
+      toast.error(`查询失败 ${result.message}`);
       throw new Error(`查询失败 ${result.message}`);
     }
     if (!result.data) {
-      toast.error(`查询未返回数据`, { closeButton: true });
+      toast.error(`查询未返回数据`);
       throw new Error('查询未返回数据');
     }
     console.log('[TableViewTab] loadData 返回数据:', result.data);
@@ -135,9 +134,13 @@ export const TableViewTab = ({
     return [];
   };
 
+  const [refreshKey, setRefreshKey] = useState(0);
+
   // 刷新
   const handleRefresh = () => {
     getTotal(filters);
+    // 增加 refreshKey 触发 LazyLoadDataTable 重新加载数据
+    setRefreshKey(prev => prev + 1);
   };
 
   // 清空所有筛选
@@ -154,20 +157,23 @@ export const TableViewTab = ({
   return (
     <div className="flex flex-col h-full gap-2">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold">{tableName}</h2>
+        <div className="flex items-center gap-1">
+          <h2 className="text-base font-semibold">{tableName}</h2>
+          <div className="p-1 hover:bg-accent rounded cursor-pointer" onClick={handleRefresh} title="刷新">
+            <RotateCcw className="w-4 h-4" />
+          </div>
+        </div>
         <div className="flex gap-1">
           {filters.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={handleClearFilters} title="清空筛选">
-              <XCircle className="w-3 h-3" />
-            </Button>
+            <div className="p-1 hover:bg-accent rounded cursor-pointer" onClick={handleClearFilters} title="清空筛选">
+              <XCircle className="w-4 h-4" />
+            </div>
           )}
-          <Button variant="ghost" size="sm" onClick={handleRefresh} title="刷新">
-            <RotateCcw className="w-3 h-3" />
-          </Button>
         </div>
       </div>
       <div className="flex-1 overflow-hidden">
         <LazyLoadDataTable
+          key={refreshKey}
           dbKey={dbkey}
           dbName={dbName}
           tableName={tableName}
