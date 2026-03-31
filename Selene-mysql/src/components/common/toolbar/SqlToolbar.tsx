@@ -1,6 +1,5 @@
-import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlignJustify, FilePlus, Play, Save, RotateCcw } from "lucide-react";
+import { AlignJustify, FilePlus, Play, Save } from "lucide-react";
 
 type SqlToolbarProps = {
     handleRun: () => void;
@@ -10,46 +9,64 @@ type SqlToolbarProps = {
   };
 
   const SqlToolbar: React.FC<SqlToolbarProps> = ({ handleRun, handleFormat, handleSave, handleSaveAs }) => {
+    const buttonStyle = {
+      backgroundColor: 'transparent',
+      border: 'none',
+      cursor: 'pointer',
+      padding: '4px 8px',
+      borderRadius: '4px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: 'var(--foreground)',
+      transition: 'background-color 0.2s',
+    };
+
+    const hoverStyle = {
+      ...buttonStyle,
+      backgroundColor: 'var(--accent)',
+    };
+
     return(
 
       <div className="flex items-center gap-1 mb-2">
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="sm" onClick={handleRun}>
+          <button style={buttonStyle} onClick={handleRun} onMouseEnter={(e) => Object.assign(e.currentTarget.style, hoverStyle)} onMouseLeave={(e) => Object.assign(e.currentTarget.style, buttonStyle)}>
             <Play className="w-3 h-3" />
-          </Button>
+          </button>
         </TooltipTrigger>
         <TooltipContent>执行 SQL</TooltipContent>
       </Tooltip>
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="sm" onClick={handleSave}>
+          <button style={buttonStyle} onClick={handleSave} onMouseEnter={(e) => Object.assign(e.currentTarget.style, hoverStyle)} onMouseLeave={(e) => Object.assign(e.currentTarget.style, buttonStyle)}>
             <Save className="w-3 h-3" />
-          </Button>
+          </button>
         </TooltipTrigger>
         <TooltipContent>保存查询</TooltipContent>
       </Tooltip>
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="sm" onClick={handleSaveAs}>
+          <button style={buttonStyle} onClick={handleSaveAs} onMouseEnter={(e) => Object.assign(e.currentTarget.style, hoverStyle)} onMouseLeave={(e) => Object.assign(e.currentTarget.style, buttonStyle)}>
             <FilePlus className="w-3 h-3" />
-          </Button>
+          </button>
         </TooltipTrigger>
         <TooltipContent>另存为</TooltipContent>
       </Tooltip>
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="sm" onClick={handleFormat}>
+          <button style={buttonStyle} onClick={handleFormat} onMouseEnter={(e) => Object.assign(e.currentTarget.style, hoverStyle)} onMouseLeave={(e) => Object.assign(e.currentTarget.style, buttonStyle)}>
             <AlignJustify className="w-3 h-3" />
-          </Button>
+          </button>
         </TooltipTrigger>
         <TooltipContent>格式化 SQL</TooltipContent>
       </Tooltip>
     </div>
     );
-}
+  }
 
-export default SqlToolbar;
+  export default SqlToolbar;

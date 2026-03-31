@@ -20,6 +20,117 @@ export const SqlMonacoEditor: React.FC<ExecResultProps & { execResult?: ExecResu
   onSaveAs,
   onContentChange,
 }) => {
+  // 获取当前主题
+  const [editorTheme, setEditorTheme] = useState("vs-light");
+
+  // 注册自定义 Monaco 主题
+  useEffect(() => {
+    // 只有在 monaco 可用时注册主题
+    const monaco = (window as any).monaco;
+    if (!monaco) return;
+
+    // 蓝色主题
+    monaco.editor.defineTheme('theme-blue-monaco', {
+      base: 'vs',
+      inherit: true,
+      rules: [],
+      colors: {
+        'editor.background': '#f0f9ff',
+        'editor.foreground': '#0c4a6e',
+        'editorLineNumber.foreground': '#0369a1',
+        'editorCursor.foreground': '#0ea5e9',
+        'editor.selectionBackground': '#bae6fd',
+        'editor.lineHighlightBackground': '#e0f2fe',
+      },
+    });
+
+    // 绿色主题
+    monaco.editor.defineTheme('theme-green-monaco', {
+      base: 'vs',
+      inherit: true,
+      rules: [],
+      colors: {
+        'editor.background': '#f0fdf4',
+        'editor.foreground': '#14532d',
+        'editorLineNumber.foreground': '#15803d',
+        'editorCursor.foreground': '#22c55e',
+        'editor.selectionBackground': '#bbf7d0',
+        'editor.lineHighlightBackground': '#dcfce7',
+      },
+    });
+
+    // 紫色主题
+    monaco.editor.defineTheme('theme-purple-monaco', {
+      base: 'vs',
+      inherit: true,
+      rules: [],
+      colors: {
+        'editor.background': '#faf5ff',
+        'editor.foreground': '#581c87',
+        'editorLineNumber.foreground': '#7e22ce',
+        'editorCursor.foreground': '#a855f7',
+        'editor.selectionBackground': '#e9d5ff',
+        'editor.lineHighlightBackground': '#f3e8ff',
+      },
+    });
+
+    // 橙色主题
+    monaco.editor.defineTheme('theme-orange-monaco', {
+      base: 'vs',
+      inherit: true,
+      rules: [],
+      colors: {
+        'editor.background': '#fff7ed',
+        'editor.foreground': '#9a3412',
+        'editorLineNumber.foreground': '#c2410c',
+        'editorCursor.foreground': '#f97316',
+        'editor.selectionBackground': '#fed7aa',
+        'editor.lineHighlightBackground': '#ffedd5',
+      },
+    });
+  }, []);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme === 'dark') {
+      setEditorTheme("vs-dark");
+    } else if (['blue', 'green', 'purple', 'orange'].includes(savedTheme)) {
+      // 自定义主题使用对应的 Monaco 主题
+      setEditorTheme(`theme-${savedTheme}-monaco`);
+    } else {
+      setEditorTheme("vs-light");
+    }
+  }, []);
+
+  // 监听主题变化
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      if (savedTheme === 'dark') {
+        setEditorTheme("vs-dark");
+      } else if (['blue', 'green', 'purple', 'orange'].includes(savedTheme)) {
+        // 自定义主题使用对应的 Monaco 主题
+        setEditorTheme(`theme-${savedTheme}-monaco`);
+      } else {
+        setEditorTheme("vs-light");
+      }
+    };
+    // 监听 theme-changed 事件
+    window.addEventListener('theme-changed', handleThemeChange);
+    // 监听 localStorage 变化
+    const storageListener = (e: StorageEvent) => {
+      if (e.key === 'theme') {
+        handleThemeChange();
+      }
+    };
+    window.addEventListener('storage', storageListener);
+    // 初始化
+    handleThemeChange();
+    return () => {
+      window.removeEventListener('theme-changed', handleThemeChange);
+      window.removeEventListener('storage', storageListener);
+    };
+  }, []);
   // const [code, setCode] = useState("SELECT * FROM users WHERE id = 1;");
   const [code, setCode] = useState(initialContent || "");
   const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
@@ -204,7 +315,7 @@ export const SqlMonacoEditor: React.FC<ExecResultProps & { execResult?: ExecResu
       <div
         ref={containerRef}
         className="flex-1 min-h-0 relative"
-        style={{ width: "100%" }}
+        style={{ width: "100%", backgroundColor: "var(--background)", borderColor: "var(--border)" }}
       >
         <Editor
           height="100%"
@@ -214,7 +325,7 @@ export const SqlMonacoEditor: React.FC<ExecResultProps & { execResult?: ExecResu
             setCode(value ?? "");
             onContentChange?.(value ?? "");
           }}
-          theme="vs-light"
+          theme={editorTheme}
           options={{
             fontSize: 13,
             fontFamily:
@@ -230,7 +341,7 @@ export const SqlMonacoEditor: React.FC<ExecResultProps & { execResult?: ExecResu
 
       {/* 结果区域：仅在有执行结果时展示 */}
       {execResult && (
-        <div className="flex-1 min-h-0 border-t overflow-auto p-2 flex flex-col">
+        <div className="flex-1 min-h-0 overflow-auto p-2 flex flex-col" style={{ borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-foreground">执行结果</span>
             <span

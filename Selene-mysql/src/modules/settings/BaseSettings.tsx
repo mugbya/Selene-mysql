@@ -35,6 +35,8 @@ export default function BaseSettings() {
     localStorage.setItem('theme', t);
     // 应用主题
     applyTheme(t);
+    // 发送主题变化事件
+    window.dispatchEvent(new CustomEvent('theme-changed', { detail: t }));
   };
 
   // 应用主题

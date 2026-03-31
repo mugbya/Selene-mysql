@@ -768,15 +768,15 @@ function WorkSpaceTreePanel({
                   <li className="text-muted-foreground text-xs ml-4">暂无保存的查询</li>
                 ) : (
                   savedQueries.map((query) => (
-                    <li key={query.id}>
+                    <li key={query.id} className="ml-4">
                       <ContextMenu>
                         <ContextMenuTrigger>
                           <div
                             className="flex items-center gap-1 cursor-pointer hover:text-primary py-0.5"
                             onClick={() => openSavedQuery(query)}
                           >
-                            <FileText className="w-4 h-4" />
-                            <span className="truncate">{query.name}</span>
+                            <FileText className="w-3 h-3" />
+                            <span className="truncate text-xs">{query.name}</span>
                           </div>
                         </ContextMenuTrigger>
                         <ContextMenuContent className="w-48">
