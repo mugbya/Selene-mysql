@@ -1,6 +1,7 @@
 import { Database, Settings } from 'lucide-react';
 import { MenuPanelProps } from '../types';
 import { useConnectionStore } from '@/store/useConnectionStore';
+import { useI18n } from "@/i18n";
 
 
 /**
@@ -10,6 +11,7 @@ export default function MenuPanel({ openSettings, toggleLeft }: MenuPanelProps) 
   // const { setShowLeftPanel } = useLayoutContext();
   // const toggleConnectionView  = useMainViewStore((s) => s.toggleConnectionView);
   const toggleConnectionButton = useConnectionStore((s) => s.toggleConnectionButton);
+  const { t } = useI18n();
   return (
     <>
       {/* <div className="p-0 space-y-2 border-r "> */}
@@ -17,7 +19,7 @@ export default function MenuPanel({ openSettings, toggleLeft }: MenuPanelProps) 
         <div
           onClick={toggleConnectionButton}
           className="p-1.5 rounded cursor-pointer hover:bg-accent text-primary"
-          title="数据库连接"
+          title={t('menu.database')}
         >
           <Database className="w-6 h-6" />
         </div>
@@ -34,7 +36,7 @@ export default function MenuPanel({ openSettings, toggleLeft }: MenuPanelProps) 
         <div
           onClick={openSettings}
           className="p-1.5 rounded cursor-pointer hover:bg-accent text-muted-foreground"
-          title="设置"
+          title={t('settings.title')}
         >
           <Settings className="w-6 h-6" />
         </div>

@@ -6,9 +6,11 @@ import {SqlMonacoEditor} from "@/components/common/content-viewer/SqlMonacoEdito
 import { useRef } from "react";
 import { editor as MonacoEditor } from "monaco-editor";
 import { ExecResultProps } from "@/types";
+import { useI18n } from "@/i18n";
 
 
 export const EditTabs: React.FC<ExecResultProps> = ({ dbKey, onExecResult }) => {
+  const { t } = useI18n();
   const {
     contentTabs,
     activeContentId,
@@ -77,7 +79,7 @@ export const EditTabs: React.FC<ExecResultProps> = ({ dbKey, onExecResult }) => 
             const id = nanoid();
             openContentTab({
               tabId: id,
-              title: "新建查询",
+              title: t('query.new'),
               tabType: "query",
               content: "",
               isSaved: false,
@@ -100,7 +102,7 @@ export const EditTabs: React.FC<ExecResultProps> = ({ dbKey, onExecResult }) => 
             <SqlMonacoEditor dbKey={dbKey} onExecResult={onExecResult} />
           </div>
         ) : (
-          <div className="text-center text-muted-foreground mt-10">没有打开的编辑器</div>
+          <div className="text-center text-muted-foreground mt-10">{t('tab.noEditor')}</div>
         )}
       </div>
     </main>

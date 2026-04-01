@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { Trash2, Plus, Save, Undo2 } from "lucide-react";
 import { executeSQL } from "@/db/msyql-client";
+import { useI18n } from "@/i18n";
 
 export interface ExecResult {
   columns: string[];
@@ -51,6 +52,7 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
   tableName,
   dbKey,
 }) => {
+  const { t } = useI18n();
   const [editedRows, setEditedRows] = useState<
     Record<number, Record<string, string>>
   >({});
@@ -236,7 +238,7 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
 
   const handleSave = async () => {
     if (generateAlterSQL.length === 0) {
-      toast.info("没有需要保存的更改");
+      toast.info(t('table.noChanges'));
       return;
     }
 
@@ -245,19 +247,19 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
       for (const sql of generateAlterSQL) {
         const result = await executeSQL(dbKey, sql);
         if (!result.success) {
-          toast.error(`执行失败: ${sql}\n${result.message}`);
+          toast.error(t('table.executeFailed', { message: `${sql}\n${result.message}` }));
           setSaving(false);
           return;
         }
       }
-      toast.success("表结构保存成功");
+      toast.success(t('table.saved'));
       // 清空修改状态
       setEditedRows({});
       setDeletedRows(new Set());
       setNewRows([]);
       // TODO: 刷新表结构
     } catch (error) {
-      toast.error(`保存失败: ${error}`);
+      toast.error(t('table.saveFailed', { message: String(error) }));
     } finally {
       setSaving(false);
     }
@@ -270,13 +272,13 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="text-xs text-muted-foreground">
-          表名: <span className="font-medium">{tableName}</span>
+          {t('table.tableName', { tableName })}
         </div>
         <div className="flex gap-1">
-          <Button variant="ghost" size="sm" onClick={handleAddNewRow} title="添加列">
+          <Button variant="ghost" size="sm" onClick={handleAddNewRow} title={t('table.addColumn')}>
             <Plus className="w-3 h-3" />
           </Button>
-          <Button size="sm" onClick={handleSave} disabled={saving || generateAlterSQL.length === 0} title="保存">
+          <Button size="sm" onClick={handleSave} disabled={saving || generateAlterSQL.length === 0} title={t('table.save')}>
             <Save className="w-3 h-3" />
           </Button>
         </div>
@@ -483,7 +485,7 @@ export const EditableStructureTable: React.FC<EditableTableProps> = ({
                       <td key={`new-${rowIndex}-${colIndex}`} className="px-1 py-0.5">
                         <Input
                           className="h-5 text-xs rounded-none"
-                          placeholder={column === "字段名" ? "必填" : ""}
+                          placeholder={column === t('table.fieldName') ? t('table.required') : ""}
                           value={newRow[column] || ""}
                           onChange={(e) =>
                             handleNewRowChange(rowIndex, column, e.target.value)

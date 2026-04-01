@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Copy, Download, Loader2 } from "lucide-react";
 import { executeSQL } from "@/db/msyql-client";
+import { useI18n } from "@/i18n";
 
 interface ExportWizardDialogProps {
   open: boolean;
@@ -26,6 +27,7 @@ export function ExportWizardDialog({
   dbName,
   tables,
 }: ExportWizardDialogProps) {
+  const { t } = useI18n();
   const [selectedTables, setSelectedTables] = useState<Set<string>>(new Set());
   const [includeStructure, setIncludeStructure] = useState(true);
   const [includeData, setIncludeData] = useState(true);
@@ -65,7 +67,7 @@ export function ExportWizardDialog({
 
   const handleExport = async () => {
     if (selectedTables.size === 0) {
-      toast.error("请至少选择一个表");
+      toast.error(t('export.selectTable'));
       return;
     }
 
@@ -159,9 +161,9 @@ export function ExportWizardDialog({
       }
 
       setExportResult(sqlOutput);
-      toast.success("导出完成");
+      toast.success(t('export.success'));
     } catch (error) {
-      toast.error(`导出失败: ${error}`);
+      toast.error(t('export.failed') + `: ${error}`);
     } finally {
       setExporting(false);
     }
@@ -169,14 +171,14 @@ export function ExportWizardDialog({
 
   const handleCopy = () => {
     navigator.clipboard.writeText(exportResult);
-    toast.success("已复制到剪贴板");
+    toast.success(t('export.copied'));
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>导出数据库 - {dbName}</DialogTitle>
+          <DialogTitle>{t('export.title')} - {dbName}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -184,14 +186,14 @@ export function ExportWizardDialog({
           <div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium">
-                选择要导出的表 ({selectedTables.size}/{tables.length})
+                {t('export.selectTables')} ({selectedTables.size}/{tables.length})
               </span>
               <div className="space-x-2">
                 <Button variant="outline" size="sm" onClick={handleSelectAll}>
-                  全选
+                  {t('common.selectAll')}
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleDeselectAll}>
-                  清除
+                  {t('common.clear')}
                 </Button>
               </div>
             </div>
@@ -223,7 +225,7 @@ export function ExportWizardDialog({
                   checked={includeStructure}
                   onChange={(e) => setIncludeStructure(e.target.checked)}
                 />
-                <span className="text-sm">包含表结构</span>
+                <span className="text-sm">{t('export.includeStructure')}</span>
               </label>
               <label className="flex items-center space-x-2">
                 <input
@@ -231,7 +233,7 @@ export function ExportWizardDialog({
                   checked={includeData}
                   onChange={(e) => setIncludeData(e.target.checked)}
                 />
-                <span className="text-sm">包含数据</span>
+                <span className="text-sm">{t('export.includeData')}</span>
               </label>
             </div>
 
@@ -247,7 +249,7 @@ export function ExportWizardDialog({
                 </label>
                 {extendedInsert && (
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm">每</span>
+                    <span className="text-sm">{t('export.rowsPerInsert')}</span>
                     <input
                       type="number"
                       className="w-16 h-8 border rounded px-2"
@@ -256,7 +258,6 @@ export function ExportWizardDialog({
                       min={1}
                       max={1000}
                     />
-                    <span className="text-sm">行合并为一个INSERT</span>
                   </div>
                 )}
               </div>
@@ -267,9 +268,9 @@ export function ExportWizardDialog({
           {exportResult && (
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">导出结果</span>
+                <span className="text-sm font-medium">{t('export.result')}</span>
                 <Button variant="outline" size="sm" onClick={handleCopy}>
-                  <Copy className="w-4 h-4 mr-1" /> 复制
+                  <Copy className="w-4 h-4 mr-1" /> {t('export.copy')}
                 </Button>
               </div>
               <pre className="bg-black/90 text-gray-100 p-4 rounded-md overflow-auto max-h-[300px] text-xs font-mono">
@@ -281,11 +282,11 @@ export function ExportWizardDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            关闭
+            {t('common.close')}
           </Button>
           <Button onClick={handleExport} disabled={exporting || selectedTables.size === 0}>
             {exporting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {exporting ? "导出中..." : "导出"}
+            {exporting ? t('export.exporting') : t('export.download')}
           </Button>
         </DialogFooter>
       </DialogContent>

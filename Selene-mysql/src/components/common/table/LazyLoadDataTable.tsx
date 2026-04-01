@@ -3,6 +3,7 @@ import { ExecResult } from "@/types";
 import { ChevronLeft, ChevronRight, Plus, Save, Trash, Filter } from "lucide-react";
 import { executeSQL } from "@/db/msyql-client";
 import { toast } from "sonner";
+import { useI18n } from "@/i18n";
 
 // 筛选条件类型
 type FilterCondition = {
@@ -37,6 +38,7 @@ export default function LazyLoadDataTable({
   dbKey,
   pageSize = 50,
 }: EditableDataTableProps) {
+  const { t } = useI18n();
   const [columns, setColumns] = useState<string[]>([]);
   const [dataRows, setDataRows] = useState<string[][]>([]);
   const [page, setPage] = useState(0);
@@ -332,17 +334,17 @@ export default function LazyLoadDataTable({
     console.log('[LazyLoadDataTable] handleAddRow - columns:', columns, 'columns.length:', columns.length, 'loading:', loading);
     // 如果数据还没加载完成或者 columns 为空，不允许添加
     if (loading) {
-      toast.warning('正在加载数据，请稍后...');
+      toast.warning(t('error.loadingData'));
       return;
     }
     if (columns.length === 0) {
-      toast.warning('数据未加载完成，请稍后再试');
+      toast.warning(t('error.dataNotLoaded'));
       return;
     }
 
     // 检查主键是否已获取
     if (!primaryKey) {
-      toast.warning('正在获取主键信息，请稍后...');
+      toast.warning(t('error.fetchingPK'));
       return;
     }
 
@@ -366,7 +368,7 @@ export default function LazyLoadDataTable({
     console.log('[LazyLoadDataTable] handleCellChange - rowIdx:', rowIdx, 'colIdx:', colIdx, 'value:', value);
     console.log('[LazyLoadDataTable] handleCellChange - primaryKey:', primaryKey, 'primaryKeyColumnIndex:', primaryKeyColumnIndex);
     if (!primaryKey || primaryKeyColumnIndex === null) {
-      toast.error('无法编辑：表没有主键');
+      toast.error(t('error.noPK'));
       return;
     }
 
@@ -384,7 +386,7 @@ export default function LazyLoadDataTable({
     // 获取主键值
     const pkValue = newDataRows[rowIdx][primaryKeyColumnIndex];
     if (!pkValue) {
-      toast.error('无法编辑：主键值为空');
+      toast.error(t('error.noPKValue'));
       return;
     }
 
@@ -403,7 +405,7 @@ export default function LazyLoadDataTable({
 
   const handleDelete = async () => {
     if (selectedRows.size === 0) {
-      toast.error('请选择要删除的行');
+      toast.error(t('error.selectRow'));
       return;
     }
 
@@ -420,7 +422,7 @@ export default function LazyLoadDataTable({
     // 删除已有行需要执行 SQL
     if (existingRowIndices.length > 0) {
       if (!primaryKey || primaryKeyColumnIndex === null) {
-        toast.error('无法删除：表没有主键');
+        toast.error(t('error.cannotDelete'));
         return;
       }
 
@@ -431,7 +433,7 @@ export default function LazyLoadDataTable({
       })).filter(row => row.pkValue);
 
       if (rowsToDelete.length === 0) {
-        toast.error('无法删除：主键值为空');
+        toast.error(t('error.cannotDeletePK'));
         return;
       }
 
@@ -444,7 +446,7 @@ export default function LazyLoadDataTable({
         if (result.success) {
           successCount++;
         } else {
-          toast.error(`删除失败: ${result.message}`);
+          toast.error(t('error.deleteFailed', { message: String(result.message) }));
         }
       }
 
@@ -464,13 +466,13 @@ export default function LazyLoadDataTable({
   const handleSave = async () => {
     console.log('[LazyLoadDataTable] handleSave - dbKey:', dbKey, 'dirtyRows:', dirtyRows, 'newRows:', newRows);
     if (!dbKey) {
-      toast.error('数据库连接失败');
+      toast.error(t('error.noConnection'));
       return;
     }
 
     if (newRows.length === 0 && dirtyRows.size === 0) {
       console.log('[LazyLoadDataTable] 没有需要保存的更改');
-      toast.info('没有需要保存的更改');
+      toast.info(t('error.noChanges'));
       return;
     }
 
@@ -500,7 +502,7 @@ export default function LazyLoadDataTable({
         successCount++;
       } else {
         errorCount++;
-        toast.error(`插入失败: ${result.message}`);
+        toast.error(t('error.insertFailed', { message: String(result.message) }));
       }
     }
 
@@ -552,7 +554,7 @@ export default function LazyLoadDataTable({
         successCount++;
       } else {
         errorCount++;
-        toast.error(`更新失败: ${result.message}`);
+        toast.error(t('error.updateFailed', { message: String(result.message) }));
       }
     }
 
@@ -578,7 +580,7 @@ export default function LazyLoadDataTable({
           <div
             className={`p-1 rounded cursor-pointer ${page === 0 ? 'opacity-50' : 'hover:bg-accent'}`}
             onClick={() => page > 0 && setPage((p) => Math.max(0, p - 1))}
-            title="上一页"
+            title={t('pagination.prev')}
           >
             <ChevronLeft className="w-4 h-4" />
           </div>
@@ -588,26 +590,26 @@ export default function LazyLoadDataTable({
           <div
             className={`p-1 rounded cursor-pointer ${page >= maxPage ? 'opacity-50' : 'hover:bg-accent'}`}
             onClick={() => page < maxPage && setPage((p) => p + 1)}
-            title="下一页"
+            title={t('pagination.next')}
           >
             <ChevronRight className="w-4 h-4" />
           </div>
         </div>
         <div className="text-xs text-muted-foreground">
           {Object.keys(filters).length > 0 ? (
-            <>显示 {filteredRows.length} / {totalCount} 条</>
+            <>{t('pagination.totalRows', { show: filteredRows.length, total: totalCount })}</>
           ) : (
-            <>共 {totalCount} 条</>
+            <>{t('pagination.totalRecords', { total: totalCount })}</>
           )}
         </div>
         <div className="flex items-center gap-1">
-          <div onClick={handleAddRow} className="p-1 hover:bg-accent rounded cursor-pointer" title="添加行">
+          <div onClick={handleAddRow} className="p-1 hover:bg-accent rounded cursor-pointer" title={t('common.add')}>
             <Plus className="w-4 h-4" />
           </div>
-          <div onClick={handleSave} className="p-1 hover:bg-accent rounded cursor-pointer" title="保存">
+          <div onClick={handleSave} className="p-1 hover:bg-accent rounded cursor-pointer" title={t('common.save')}>
             <Save className="w-4 h-4" />
           </div>
-          <div onClick={handleDelete} className="p-1 hover:bg-accent rounded cursor-pointer" title="删除选中行">
+          <div onClick={handleDelete} className="p-1 hover:bg-accent rounded cursor-pointer" title={t('common.delete')}>
             <Trash className="w-4 h-4" />
           </div>
         </div>
@@ -750,7 +752,7 @@ export default function LazyLoadDataTable({
                   colSpan={columns.length + 1}
                   className="text-center text-xs text-muted-foreground py-6"
                 >
-                  暂无数据
+                  {t('common.noData')}
                 </td>
               </tr>
             )}
@@ -760,7 +762,7 @@ export default function LazyLoadDataTable({
                   colSpan={columns.length + 1}
                   className="text-center text-xs text-muted-foreground py-6"
                 >
-                  加载中...
+                  {t('common.loading')}
                 </td>
               </tr>
             )}

@@ -13,6 +13,7 @@ import { useConnectionStore } from "@/store/useConnectionStore";
 import { useShallow } from "zustand/shallow";
 import { executeSQL, fetchDatabases } from "@/db/msyql-client";
 import { toast } from "sonner";
+import { useI18n } from "@/i18n";
 
 // import { fetchTablesForDatabase } from "@/db/mysqlConnection";
 import { TreeNode } from "@/components/common/tree-panel/TreeNode";
@@ -37,6 +38,7 @@ function WorkSpaceTreePanel({
   databases: string[];
   allDatabases?: string[];
 }) {
+  const { t } = useI18n();
   const renderCount = useRef(0);
 
   useEffect(() => {
@@ -203,7 +205,7 @@ function WorkSpaceTreePanel({
     // 从 localStorage 读取完整查询内容
     const fullQuery = getSavedQueryContent(savedQuery.id);
     if (!fullQuery) {
-      toast.error("无法加载查询内容");
+      toast.error(t('error.loadContent'));
       return;
     }
 
@@ -231,7 +233,7 @@ function WorkSpaceTreePanel({
   const confirmRename = () => {
     if (renameTargetQuery && renameInput.trim()) {
       updateSavedQuery(renameTargetQuery.id, { name: renameInput.trim() });
-      toast.success("查询已重命名");
+      toast.success(t('query.renameSuccess'));
       setRenameDialogOpen(false);
       setRenameTargetQuery(null);
     }
@@ -240,7 +242,7 @@ function WorkSpaceTreePanel({
   // 处理删除
   const handleDeleteQuery = (queryId: string) => {
     deleteSavedQuery(queryId);
-    toast.success("查询已删除");
+    toast.success(t('query.deleted'));
   };
 
   const loadTables = useCallback(async (dbName: string) => {
@@ -391,7 +393,7 @@ function WorkSpaceTreePanel({
 
     const result = await executeSQL(dbKey, `DROP DATABASE \`${dbName}\``);
     if (result.success) {
-      toast.success(`数据库 ${dbName} 删除成功`);
+      toast.success(t('database.deleteSuccess', { dbName }));
       // 从 displayDatabases 中移除该数据库
       const currentDatabases = useConnectionStore.getState()
         .connectiontabs.find(c => c.tabId === tabId)?.displayDatabases || [];
@@ -425,7 +427,7 @@ function WorkSpaceTreePanel({
       // 更新本地 dbTrees 状态
       setDBTrees(prev => prev.filter(db => db.name !== dbName));
     } else {
-      toast.error("删除失败: " + result.message);
+      toast.error(t('database.deleteFailed', { message: String(result.message) }));
     }
   }, [dbKey, tabId, refreshQueries]);
 
@@ -502,20 +504,20 @@ function WorkSpaceTreePanel({
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-background p-4 rounded border w-[400px] max-h-[500px] flex flex-col">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-bold">筛选数据库</h3>
+              <h3 className="text-lg font-bold">{t('database.filter')}</h3>
               <button onClick={() => setFilterDialogOpen(false)} className="text-muted-foreground hover:text-foreground">✕</button>
             </div>
-            
+
             <input
               type="text"
-              placeholder="搜索数据库..."
+              placeholder={t('database.search')}
               className="w-full p-2 border rounded mb-3"
               value={filterSearchKeyword}
               onChange={(e) => setFilterSearchKeyword(e.target.value)}
             />
 
             {filterLoading ? (
-              <div className="text-muted-foreground">正在加载...</div>
+              <div className="text-muted-foreground">{t('database.loading')}</div>
             ) : (
               <div className="flex-1 overflow-auto">
                 <div className="mb-3">
@@ -531,7 +533,7 @@ function WorkSpaceTreePanel({
                         }
                       }}
                     />
-                    <span>全选 ({filterSelectedDBs.length}/{filterDbList.length})</span>
+                    <span>{t('database.selectAll', { count: filterSelectedDBs.length, total: filterDbList.length })}</span>
                   </label>
                 </div>
                 <div className="space-y-1 max-h-[250px] overflow-auto">
@@ -562,7 +564,7 @@ function WorkSpaceTreePanel({
                 className="px-3 py-1 bg-muted text-foreground rounded"
                 onClick={() => setFilterDialogOpen(false)}
               >
-                取消
+                {t('common.cancel')}
               </button>
               <button
                 className="px-3 py-1 bg-primary text-primary-foreground rounded"
@@ -584,7 +586,7 @@ function WorkSpaceTreePanel({
                   setFilterDialogOpen(false);
                 }}
               >
-                确定
+                {t('common.confirm')}
               </button>
             </div>
           </div>
@@ -594,7 +596,7 @@ function WorkSpaceTreePanel({
       <div className="w-full">
         <div className="flex items-center justify-between px-2 py-1">
           <div className="flex items-center">
-            <span className="text-sm font-medium">数据库列表</span>
+            <span className="text-sm font-medium">{t('database.list')}</span>
             {/* 显示筛选数量/总数 */}
             {databases.length > 0 && (
               <span className="text-xs text-muted-foreground ml-1">
@@ -649,14 +651,14 @@ function WorkSpaceTreePanel({
               </div>
             </ContextMenuTrigger>
             <ContextMenuContent className="w-48">
-              <ContextMenuItem onClick={() => openQueryTab(db.name)}>新建查询</ContextMenuItem>
+              <ContextMenuItem onClick={() => openQueryTab(db.name)}>{t('query.new')}</ContextMenuItem>
               <ContextMenuSeparator />
               <ContextMenuItem
                 onClick={() => handleAction("delete", db.name)}
                 className="text-destructive focus:text-destructive"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
-                删除数据库
+                {t('database.delete')}
               </ContextMenuItem>
             </ContextMenuContent>
           </ContextMenu>
@@ -670,7 +672,7 @@ function WorkSpaceTreePanel({
                     <ContextMenuTrigger>
                       <div className="flex items-center gap-1">
                         <Table className="w-4 h-4" />
-                        <span>表</span>
+                        <span>{t('database.tables')}</span>
                         {/* 有表数据时显示已筛选/总数，或者有缓存的总表数时显示 */}
                         {db.tables && db.tables.length > 0 ? (() => {
                           const displayedCount = (db.visibleTables?.length === 0 || !db.visibleTables)
@@ -689,10 +691,10 @@ function WorkSpaceTreePanel({
                       </div>
                     </ContextMenuTrigger>
                     <ContextMenuContent className="w-48">
-                      <ContextMenuItem onClick={() => handleGroupAction("create", db.name)}>新建表</ContextMenuItem>
+                      <ContextMenuItem onClick={() => handleGroupAction("create", db.name)}>{t('table.new')}</ContextMenuItem>
                       {/* <ContextMenuItem onClick={() => handleGroupAction("refresh", db.name)}>刷新列表</ContextMenuItem> */}
                       <ContextMenuSeparator />
-                      <ContextMenuItem onClick={() => handleGroupAction("export_all", db.name)}>导出SQL</ContextMenuItem>
+                      <ContextMenuItem onClick={() => handleGroupAction("export_all", db.name)}>{t('export.title')}</ContextMenuItem>
                       <ContextMenuSeparator />
                       <ContextMenuItem 
                         onMouseDown={(e) => e.stopPropagation()} // 提前阻止事件冒泡，避免点击后触发外层的点击事件
@@ -700,9 +702,9 @@ function WorkSpaceTreePanel({
                           e.stopPropagation();
                           setDialogTargetDB(db);
                           setVisibleTableDialogOpen(true);
-                        }}>表显示控制
+                        }}>{t('table.visibility')}
                       </ContextMenuItem>
-                      <ContextMenuItem onClick={() => handleAction("refresh", db.name)}>刷新</ContextMenuItem>
+                      <ContextMenuItem onClick={() => handleAction("refresh", db.name)}>{t('database.refresh')}</ContextMenuItem>
                     </ContextMenuContent>
                   </ContextMenu>
                 }
@@ -756,7 +758,7 @@ function WorkSpaceTreePanel({
                     }}
                   >
                     <TerminalSquare className="w-4 h-4" />
-                    <span className="flex-1">查询</span>
+                    <span className="flex-1">{t('tab.query')}</span>
                     <span className="text-xs text-muted-foreground">({savedQueries.length})</span>
                     {/* <RefreshCw
                       className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -771,7 +773,7 @@ function WorkSpaceTreePanel({
                 defaultExpanded={queriesExpanded}
               >
                 {savedQueries.length === 0 ? (
-                  <li className="text-muted-foreground text-xs ml-4">暂无保存的查询</li>
+                  <li className="text-muted-foreground text-xs ml-4">{t('common.noData')}</li>
                 ) : (
                   savedQueries.map((query) => (
                     <li key={query.id} className="ml-4">
@@ -790,7 +792,7 @@ function WorkSpaceTreePanel({
                             onClick={() => handleRename(query.id, query.name)}
                           >
                             <Edit className="w-4 h-4 mr-2" />
-                            重命名
+                            {t('query.rename')}
                           </ContextMenuItem>
                           <ContextMenuSeparator />
                           <ContextMenuItem
@@ -798,7 +800,7 @@ function WorkSpaceTreePanel({
                             className="text-destructive focus:text-destructive"
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
-                            删除
+                            {t('query.delete')}
                           </ContextMenuItem>
                         </ContextMenuContent>
                       </ContextMenu>
@@ -817,11 +819,11 @@ function WorkSpaceTreePanel({
       {renameDialogOpen && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-background p-4 rounded border w-[300px]">
-            <h3 className="text-lg font-bold mb-3 text-foreground">重命名查询</h3>
+            <h3 className="text-lg font-bold mb-3 text-foreground">{t('query.rename')}</h3>
             <Input
               value={renameInput}
               onChange={(e) => setRenameInput(e.target.value)}
-              placeholder="输入新名称"
+              placeholder={t('query.renameDesc')}
               className="mb-3"
               autoFocus
               onKeyDown={(e) => {
@@ -834,13 +836,13 @@ function WorkSpaceTreePanel({
                 className="px-3 py-1 bg-muted text-foreground rounded"
                 onClick={() => setRenameDialogOpen(false)}
               >
-                取消
+                {t('common.cancel')}
               </button>
               <button
                 className="px-3 py-1 bg-primary text-primary-foreground rounded"
                 onClick={confirmRename}
               >
-                确定
+                {t('common.confirm')}
               </button>
             </div>
           </div>

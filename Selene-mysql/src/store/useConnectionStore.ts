@@ -2,6 +2,7 @@
 import { ExecResult } from '@/types';
 import Database from '@tauri-apps/plugin-sql';
 import { create } from 'zustand';
+import { t } from '@/i18n';
 
 
 export type Connection = {
@@ -141,7 +142,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     } else {
       const conn: Connection = {
         tabId: crypto.randomUUID(),
-        name: "连接管理",
+        name: t('connection.title'),
         isDataBase: false,
         tabType: 'connectionManager',
       }
@@ -165,7 +166,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     // 创建新的设置 tab
     const settingsTab: Connection = {
       tabId: crypto.randomUUID(),
-      name: "设置",
+      name: t('settings.title'),
       isDataBase: false,
       tabType: 'settings',
     };

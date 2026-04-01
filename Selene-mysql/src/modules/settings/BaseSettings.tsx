@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Globe, Palette, Sun, Moon } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { themeColors } from "@/constants/theme";
+import { useI18n } from "@/i18n";
 
 export default function BaseSettings() {
-  const [language, setLanguage] = useState(() => localStorage.getItem('language') || 'zh');
+  const { language, setLanguage, t } = useI18n();
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
 
   // 语言选项
@@ -13,21 +14,18 @@ export default function BaseSettings() {
     { key: 'en', label: 'English', icon: '🇺🇸' },
   ];
 
-  // 主题选项
+  // 主题选项 - 根据当前语言显示
   const themes = [
-    { key: 'light', label: '浅色', labelEn: 'Light', icon: Sun },
-    { key: 'dark', label: '深色', labelEn: 'Dark', icon: Moon },
-    { key: 'blue', label: '蓝色科技', labelEn: 'Blue', icon: Palette },
-    { key: 'green', label: '绿色护眼', labelEn: 'Green', icon: Palette },
-    { key: 'purple', label: '紫色优雅', labelEn: 'Purple', icon: Palette },
-    { key: 'orange', label: '橙色活力', labelEn: 'Orange', icon: Palette },
+    { key: 'light', label: t('settings.theme.light'), labelEn: 'Light', icon: Sun },
+    { key: 'dark', label: t('settings.theme.dark'), labelEn: 'Dark', icon: Moon },
+    { key: 'blue', label: t('settings.theme.blue'), labelEn: 'Blue', icon: Palette },
+    { key: 'green', label: t('settings.theme.green'), labelEn: 'Green', icon: Palette },
+    { key: 'purple', label: t('settings.theme.purple'), labelEn: 'Purple', icon: Palette },
+    { key: 'orange', label: t('settings.theme.orange'), labelEn: 'Orange', icon: Palette },
   ];
 
   const handleLanguageChange = (lang: string) => {
-    setLanguage(lang);
-    localStorage.setItem('language', lang);
-    // 触发语言更新事件
-    window.dispatchEvent(new CustomEvent('language-changed', { detail: lang }));
+    setLanguage(lang as 'zh' | 'en');
   };
 
   const handleThemeChange = (t: string) => {
@@ -65,7 +63,7 @@ export default function BaseSettings() {
       <section className="border-b border-border pb-4">
         <h3 className="text-base font-semibold mb-3 flex items-center gap-2 text-foreground">
           <Globe className="w-4 h-4" />
-          语言 / Language
+          {t('settings.language')} / Language
         </h3>
         <div className="flex gap-2">
           {languages.map(lang => (
@@ -90,19 +88,19 @@ export default function BaseSettings() {
       <section className="pb-4">
         <h3 className="text-base font-semibold mb-3 flex items-center gap-2 text-foreground">
           <Palette className="w-4 h-4" />
-          主题 / Theme
+          {t('settings.theme')} / Theme
         </h3>
         <div className="grid grid-cols-3 gap-3">
-          {themes.map(t => {
-            const Icon = t.icon;
-            const colors = themeColors[t.key] || themeColors.light;
+          {themes.map(tm => {
+            const Icon = tm.icon;
+            const colors = themeColors[tm.key] || themeColors.light;
             return (
               <div
-                key={t.key}
-                onClick={() => handleThemeChange(t.key)}
+                key={tm.key}
+                onClick={() => handleThemeChange(tm.key)}
                 className={cn(
                   "flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all",
-                  theme === t.key
+                  theme === tm.key
                     ? "border-primary shadow-md"
                     : "border-border hover:border-muted-foreground"
                 )}
@@ -113,8 +111,8 @@ export default function BaseSettings() {
                 >
                   <Icon className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xs font-medium text-foreground">{t.label}</span>
-                <span className="text-[10px] text-muted-foreground">{t.labelEn}</span>
+                <span className="text-xs font-medium text-foreground">{tm.label}</span>
+                <span className="text-[10px] text-muted-foreground">{tm.labelEn}</span>
               </div>
             );
           })}
@@ -123,7 +121,9 @@ export default function BaseSettings() {
 
       {/* 预览 */}
       <section className="border-t border-border pt-4">
-        <h3 className="text-sm font-medium mb-3 text-muted-foreground">预览</h3>
+        <h3 className="text-sm font-medium mb-3 text-muted-foreground">
+          {language === 'zh' ? '预览' : 'Preview'}
+        </h3>
         <div
           className="p-4 rounded-lg border border-border"
           style={{
@@ -140,11 +140,11 @@ export default function BaseSettings() {
               className="text-sm font-medium"
               style={{ color: getCurrentThemeColors().primary }}
             >
-              示例标题
+              {language === 'zh' ? '示例标题' : 'Sample Title'}
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            当前主题：{themes.find(t => t.key === theme)?.label} ({themes.find(t => t.key === theme)?.labelEn})
+            {language === 'zh' ? '当前主题' : 'Current Theme'}: {themes.find(tm => tm.key === theme)?.label} ({themes.find(tm => tm.key === theme)?.labelEn})
           </p>
         </div>
       </section>

@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SavedQuery } from "@/types/connection";
+import { useI18n } from "@/i18n";
 
 interface SaveQueryDialogProps {
   open: boolean;
@@ -26,6 +27,7 @@ export function SaveQueryDialog({
   initialName = "",
   mode = 'save',
 }: SaveQueryDialogProps) {
+  const { t } = useI18n();
   const [name, setName] = useState(initialName);
 
   const handleSave = () => {
@@ -48,19 +50,19 @@ export function SaveQueryDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {mode === 'save' ? '保存查询' : '重命名查询'}
+            {mode === 'save' ? t('query.save') : t('query.rename')}
           </DialogTitle>
           <DialogDescription>
             {mode === 'save'
-              ? '为您的查询输入一个名称以便保存到查询列表中。'
-              : '输入新的查询名称。'}
+              ? t('query.saveDesc')
+              : t('query.renameDesc')}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="flex flex-col gap-2">
             <Input
               id="queryName"
-              placeholder="查询名称"
+              placeholder={t('query.name')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => {
@@ -74,10 +76,10 @@ export function SaveQueryDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            取消
+            {t('common.cancel')}
           </Button>
           <Button onClick={handleSave} disabled={!name.trim()}>
-            {mode === 'save' ? '保存' : '确定'}
+            {mode === 'save' ? t('common.save') : t('common.confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>

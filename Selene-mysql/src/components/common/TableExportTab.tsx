@@ -5,6 +5,7 @@ import { Copy, RefreshCw, Loader2 } from "lucide-react";
 import { executeSQL } from "@/db/msyql-client";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { useI18n } from "@/i18n";
 
 interface TableExportTabProps {
   dbKey: string;
@@ -13,6 +14,7 @@ interface TableExportTabProps {
 }
 
 export function TableExportTab({ dbKey, dbName, tableName }: TableExportTabProps) {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [createSQL, setCreateSQL] = useState<string>("");
 
@@ -30,10 +32,10 @@ export function TableExportTab({ dbKey, dbName, tableName }: TableExportTabProps
         const createStatement = result.data.rows[0][1];
         setCreateSQL(createStatement);
       } else {
-        toast.error("无法获取表结构: " + result.message);
+        toast.error(t('table.getStructureFailed', { message: result.message }));
       }
     } catch (error) {
-      toast.error(`获取表结构失败: ${error}`);
+      toast.error(t('table.getStructureError', { message: String(error) }));
     } finally {
       setLoading(false);
     }
@@ -41,7 +43,7 @@ export function TableExportTab({ dbKey, dbName, tableName }: TableExportTabProps
 
   const handleCopy = () => {
     navigator.clipboard.writeText(createSQL);
-    toast.success("已复制到剪贴板");
+    toast.success(t('table.copiedToClipboard'));
   };
 
   return (
@@ -49,13 +51,13 @@ export function TableExportTab({ dbKey, dbName, tableName }: TableExportTabProps
       <div className="flex items-center justify-between px-4 py-2 border-b bg-muted">
         <div className="flex items-center gap-2">
           <span className="font-medium text-foreground">{tableName}</span>
-          <span className="text-sm text-muted-foreground">表结构</span>
+          <span className="text-sm text-muted-foreground">{t('table.structureLabel')}</span>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={loadTableStructure} disabled={loading} title="刷新">
+          <Button variant="ghost" size="sm" onClick={loadTableStructure} disabled={loading} title={t('common.refresh')}>
             <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
           </Button>
-          <Button variant="ghost" size="sm" onClick={handleCopy} title="复制">
+          <Button variant="ghost" size="sm" onClick={handleCopy} title={t('export.copy')}>
             <Copy className="w-3 h-3" />
           </Button>
         </div>

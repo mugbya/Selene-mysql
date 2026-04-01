@@ -15,6 +15,7 @@ import { SavedQuery } from "@/types/connection";
 import { toast } from "sonner";
 import { SaveQueryDialog } from "@/components/common/dialog/SaveQueryDialog";
 import { useSavedQueries } from "@/hooks/useSavedQueries";
+import { useI18n } from "@/i18n";
 
 /**
  * 查询(内容)tab页
@@ -44,6 +45,7 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
   const [saveAsMode, setSaveAsMode] = useState(false);
   const [dialogInitialName, setDialogInitialName] = useState("");
   const { savedQueries, addSavedQuery, updateSavedQuery } = useSavedQueries(dbKey ?? undefined);
+  const { t } = useI18n();
 
   // if (!activeContentTab) return null;
   const activeTab = getActiveTab();
@@ -61,7 +63,7 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
 
     const content = currentActiveContentTab.content || "";
     if (!content.trim()) {
-      toast.warning("没有内容可保存");
+      toast.warning(t('query.noContent'));
       return;
     }
 
@@ -75,7 +77,7 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
         dbKey,
         databaseName: currentActiveContentTab.databaseName,
       });
-      toast.success("查询已更新");
+      toast.success(t('common.success'));
     } else {
       // 没有保存过，打开另存为对话框
       setDialogInitialName("");
@@ -90,12 +92,12 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
 
     const content = currentActiveContentTab.content || "";
     if (!content.trim()) {
-      toast.warning("没有内容可保存");
+      toast.warning(t('query.noContent'));
       return;
     }
 
     // 获取当前名称作为默认名称
-    setDialogInitialName(currentActiveContentTab.title === "新建查询" ? "" : currentActiveContentTab.title);
+    setDialogInitialName(currentActiveContentTab.title === t('query.new') ? "" : currentActiveContentTab.title);
     setSaveAsMode(true);
     setSaveDialogOpen(true);
   };
@@ -115,7 +117,7 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
       });
       // 更新 tab 标题
       updateContentTitle(currentActiveContentTab.tabId, name);
-      toast.success("查询已更新");
+      toast.success(t('common.success'));
     } else {
       // 新建保存的查询
       const newQuery = addSavedQuery({
@@ -130,7 +132,7 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
       // 更新 tab 标题
       updateContentTitle(currentActiveContentTab.tabId, name);
 
-      toast.success("查询已保存");
+      toast.success(t('common.success'));
     }
   };
 
@@ -171,7 +173,7 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
             // 新建查询页是空白页面
             openContentTab({
               tabId: id,
-              title: "新建查询",
+              title: t('query.new'),
               content: "",
               isSaved: false,
               tabType: "query",
@@ -190,7 +192,7 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
           if (!currentActiveContentTab) {
             return (
               <div className="text-center text-muted-foreground mt-10">
-                没有打开的标签页
+                {t('tab.noTabs')}
               </div>
             );
           }
@@ -228,7 +230,7 @@ export const ContentTabManager: React.FC<ExecResultProps> = ({
             return <CreateTableTab key={currentActiveContentTab.tabId} dbKey={dbKey} dbName={currentActiveContentTab.databaseName || ""} tableName={currentActiveContentTab.tableName || ""} />;
           }
           else {
-            return <div>未知类型</div>;
+            return <div>{t('tab.unknownType')}</div>;
           }
         })()}
         </div>

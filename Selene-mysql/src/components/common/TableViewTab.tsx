@@ -4,6 +4,7 @@ import { executeSQL } from "@/db/msyql-client";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { RotateCcw, XCircle } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 // 筛选条件类型
 type FilterCondition = {
@@ -24,6 +25,7 @@ export const TableViewTab = ({
   const [totalCount, setTotalCount] = useState(0);
   const [filters, setFilters] = useState<FilterCondition[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
+  const { t } = useI18n();
 
   // 构建带筛选条件的 WHERE 子句
   const buildWhereClause = (filterList: FilterCondition[], columns: string[]) => {
@@ -89,7 +91,7 @@ export const TableViewTab = ({
 
   const loadData = async (offset: number, limit: number): Promise<ExecResult> => {
     if (!dbkey) {
-      throw new Error('数据库连接失败');
+      throw new Error(t('error.noConnection'));
     }
 
     // 使用当前最新的 filters
@@ -112,12 +114,12 @@ export const TableViewTab = ({
     const result = await executeSQL(dbkey, sql);
     console.log('[TableViewTab] loadData result:', JSON.stringify(result));
     if (!result.success) {
-      toast.error(`查询失败 ${result.message}`);
-      throw new Error(`查询失败 ${result.message}`);
+      toast.error(`${t('error.queryFailed')} ${result.message}`);
+      throw new Error(`${t('error.queryFailed')} ${result.message}`);
     }
     if (!result.data) {
-      toast.error(`查询未返回数据`);
-      throw new Error('查询未返回数据');
+      toast.error(t('query.noResult'));
+      throw new Error(t('query.noResult'));
     }
     console.log('[TableViewTab] loadData 返回数据:', result.data);
     return result.data;
@@ -159,13 +161,13 @@ export const TableViewTab = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
           <h2 className="text-base font-semibold">{tableName}</h2>
-          <div className="p-1 hover:bg-accent rounded cursor-pointer" onClick={handleRefresh} title="刷新">
+          <div className="p-1 hover:bg-accent rounded cursor-pointer" onClick={handleRefresh} title={t('common.refresh')}>
             <RotateCcw className="w-4 h-4" />
           </div>
         </div>
         <div className="flex gap-1">
           {filters.length > 0 && (
-            <div className="p-1 hover:bg-accent rounded cursor-pointer" onClick={handleClearFilters} title="清空筛选">
+            <div className="p-1 hover:bg-accent rounded cursor-pointer" onClick={handleClearFilters} title={t('common.clear')}>
               <XCircle className="w-4 h-4" />
             </div>
           )}

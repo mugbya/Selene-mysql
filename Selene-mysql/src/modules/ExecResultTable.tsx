@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Save, MinusCircle, X } from "lucide-react";
 import { ExecResult } from "@/types";
+import { useI18n } from "@/i18n";
 
 // 判断是否是 DDL 操作
 const isDDL = (text: string): boolean => {
@@ -13,15 +14,17 @@ const isDDL = (text: string): boolean => {
 
 // DDL 操作结果组件
 const DDLResultView: React.FC<{ result: ExecResult }> = ({ result }) => {
+  const { t } = useI18n();
+
   return (
     <div className="flex-none p-2">
       {result.success === false ? (
         <div className="text-red-600">
-          <div className="font-medium">操作失败</div>
+          <div className="font-medium">{t('result.failed')}</div>
           {result.error && <div className="text-sm mt-1 whitespace-pre-wrap">{result.error}</div>}
         </div>
       ) : (
-        <div className="text-green-600">操作执行成功</div>
+        <div className="text-green-600">{t('result.success')}</div>
       )}
     </div>
   );
@@ -29,6 +32,7 @@ const DDLResultView: React.FC<{ result: ExecResult }> = ({ result }) => {
 
 // DML 操作结果组件（查询结果表格）
 const DMLResultView: React.FC<EditableResultTableProps> = ({ result, onDelete, onEdit, onClose }) => {
+  const { t } = useI18n();
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [editedRowData, setEditedRowData] = useState<string[]>([]);
@@ -91,16 +95,16 @@ const DMLResultView: React.FC<EditableResultTableProps> = ({ result, onDelete, o
       {/* 顶部操作栏 */}
       <div className="p-2 border-b bg-background flex gap-2 items-center justify-between">
         {result.success === false ? (
-          <span className="text-red-600 font-medium">执行失败</span>
+          <span className="text-red-600 font-medium">{t('result.executionFailed')}</span>
         ) : (
-          <span className="text-green-600 font-medium">执行成功</span>
+          <span className="text-green-600 font-medium">{t('result.executionSuccess')}</span>
         )}
 
         {onClose && (
           <button
             onClick={onClose}
             className="text-muted-foreground hover:text-foreground flex items-center"
-            title="关闭结果表"
+            title={t('result.closeResult')}
           >
             <X className="w-4 h-4" />
           </button>
@@ -148,7 +152,7 @@ const DMLResultView: React.FC<EditableResultTableProps> = ({ result, onDelete, o
                     </div>
                   </th>
                 ))}
-                <th className="px-2 py-1 text-center">操作</th>
+                <th className="px-2 py-1 text-center">{t('result.action')}</th>
               </tr>
             </thead>
 
@@ -222,13 +226,13 @@ const DMLResultView: React.FC<EditableResultTableProps> = ({ result, onDelete, o
 
       {/* 底部统计 */}
       <div className="border-t p-2 bg-background flex justify-between items-center text-xs">
-        <span>共 {result.rows.length} 条记录，已选中 {selectedRows.length} 条</span>
+        <span>{t('result.recordsSelected', { total: result.rows.length, selected: selectedRows.length })}</span>
         {selectedRows.length > 0 && onDelete && (
           <button
             onClick={handleDeleteSelected}
             className="text-red-500 hover:text-red-700"
           >
-            删除选中
+            {t('result.deleteSelected')}
           </button>
         )}
       </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import { toast } from 'sonner';
 import { useConnectionStore } from '@/store/useConnectionStore';
+import { useI18n } from '@/i18n';
 import ConnectionTestView from '@/components/common/connectionManager/ConnectionTestView';
 import { DBConnectionPersisted, DBConnectionRuntime } from '@/types/connection';
 import ConnectionFormDialog from '@/components/common/dialog/ConnectionFormDialog';
@@ -55,6 +56,8 @@ const saveExpandedFolders = (folders: Set<string>) => {
  * 连接管理
  */
 export default function ConnectionManager() {
+  const { t } = useI18n();
+
   const [editing, setEditing] = useState<DBConnectionPersisted | null>(null);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -103,7 +106,7 @@ export default function ConnectionManager() {
 
     const trimmedName = editingFolderName.trim();
     if (!trimmedName) {
-      toast.error('文件夹名称不能为空');
+      toast.error(t('common.folderNameRequired'));
       return;
     }
 
@@ -111,7 +114,7 @@ export default function ConnectionManager() {
     if (!node) return;
 
     if (isNameDuplicate(trimmedName, node.parentId, editingFolderId)) {
-      toast.error('同级目录下已存在相同名称');
+      toast.error(t('common.folderNameDuplicate'));
       return;
     }
 
@@ -154,10 +157,10 @@ export default function ConnectionManager() {
   // 创建文件夹（开始编辑名称）
   const handleCreateFolder = (parentId: string | null = null) => {
     // 生成临时名称
-    let newName = '新建文件夹';
+    let newName = t('connection.newFolder');
     let counter = 1;
     while (isNameDuplicate(newName, parentId)) {
-      newName = `新建文件夹 (${counter})`;
+      newName = `${t('connection.newFolder')} (${counter})`;
       counter++;
     }
 
@@ -246,7 +249,7 @@ export default function ConnectionManager() {
     if (node.type !== 'connection' || !node.data) return;
     const copied: TreeNode = {
       id: nanoid(),
-      name: node.name + ' (副本)',
+      name: node.name + ' (' + t('connection.copy') + ')',
       type: 'connection',
       parentId: node.parentId,
       data: { ...node.data, id: nanoid() }
@@ -316,7 +319,7 @@ export default function ConnectionManager() {
 
     const result = await fetchDatabases(conn.id);
     if (!result) {
-      toast.error("连接失败");
+      toast.error(t('connection.failed'));
       return;
     }
     const realDatabases = result ?? [];
@@ -324,11 +327,12 @@ export default function ConnectionManager() {
     if (!displayDatabases || displayDatabases.length === 0) {
       displayDatabases = null;
     } else {
-      const filtered = displayDatabases.filter(db => realDatabases.includes(db));
-      if (filtered.length !== displayDatabases.length) {
-        toast.warning(`以下数据库不存在，已过滤: ${displayDatabases.filter(db => !realDatabases.includes(db)).join(', ')}`);
-        displayDatabases = filtered;
-      }
+        const filtered = displayDatabases.filter(db => realDatabases.includes(db));
+        if (filtered.length !== displayDatabases.length) {
+          const notFound = displayDatabases.filter(db => !realDatabases.includes(db)).join(', ');
+          toast.warning(t('connection.filteredDatabases') + ': ' + notFound);
+          displayDatabases = filtered;
+        }
     }
 
     const connInfo = {
@@ -430,7 +434,7 @@ export default function ConnectionManager() {
               {/* 连接按钮 */}
               <div
                 className="p-0.5 hover:bg-green-100 rounded cursor-pointer"
-                title="连接"
+                title={t('connection.connect')}
                 onClick={() => handleConnect(node)}
               >
                 <Link className="w-4 h-4 text-green-600" />
@@ -452,19 +456,19 @@ export default function ConnectionManager() {
     <div className="w-80 h-full flex flex-col border-r border-border">
       {/* 头部 */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/50">
-        <span className="text-sm font-medium text-foreground">连接管理</span>
+        <span className="text-sm font-medium text-foreground">{t('connection.title')}</span>
         <div className="flex items-center gap-1">
           <div
             onClick={() => handleCreateFolder(null)}
             className="p-1 hover:bg-accent rounded cursor-pointer"
-            title="新建文件夹"
+            title={t('connection.newFolder')}
           >
             <FolderPlus className="w-4 h-4 text-muted-foreground" />
           </div>
           <div
             onClick={() => handleAddConnection(null)}
             className="p-1 hover:bg-accent rounded cursor-pointer"
-            title="新建连接"
+            title={t('connection.new')}
           >
             <Plus className="w-4 h-4 text-muted-foreground" />
           </div>
@@ -475,7 +479,7 @@ export default function ConnectionManager() {
       <div className="flex-1 overflow-auto py-2">
         {rootItems.length === 0 ? (
           <div className="text-center text-muted-foreground text-xs py-8">
-            暂无连接<br />点击上方 + 创建
+            {t('common.noData')}
           </div>
         ) : (
           rootItems.map(item => renderNode(item))
@@ -498,19 +502,19 @@ export default function ConnectionManager() {
                   setContextMenu(null);
                 }}
               >
-                <Pencil className="w-3 h-3" /> 重命名
+                <Pencil className="w-3 h-3" /> {t('connection.rename')}
               </div>
               <div
                 className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent cursor-pointer"
                 onClick={() => handleAddConnection(contextMenu.node.id)}
               >
-                <Plus className="w-3 h-3" /> 新建连接
+                <Plus className="w-3 h-3" /> {t('connection.new')}
               </div>
               <div
                 className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent cursor-pointer"
                 onClick={() => handleCreateFolder(contextMenu.node.id)}
               >
-                <FolderPlus className="w-3 h-3" /> 新建文件夹
+                <FolderPlus className="w-3 h-3" /> {t('connection.newFolder')}
               </div>
             </>
           )}
@@ -521,19 +525,19 @@ export default function ConnectionManager() {
                 className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent cursor-pointer text-green-600"
                 onClick={() => handleConnect(contextMenu.node)}
               >
-                <Link className="w-3 h-3" /> 连接
+                <Link className="w-3 h-3" /> {t('connection.connect')}
               </div>
               <div
                 className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent cursor-pointer"
                 onClick={() => handleEdit(contextMenu.node)}
               >
-                <Pencil className="w-3 h-3" /> 编辑连接
+                <Pencil className="w-3 h-3" /> {t('connection.editConnection')}
               </div>
               <div
                 className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent cursor-pointer"
                 onClick={() => handleCopy(contextMenu.node)}
               >
-                <Copy className="w-3 h-3" /> 复制连接
+                <Copy className="w-3 h-3" /> {t('connection.copyConnection')}
               </div>
             </>
           )}
@@ -543,7 +547,7 @@ export default function ConnectionManager() {
             className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent cursor-pointer text-destructive"
             onClick={() => handleDelete(contextMenu.node.id)}
           >
-            <Trash2 className="w-3 h-3" /> 删除
+            <Trash2 className="w-3 h-3" /> {t('common.delete')}
           </div>
         </div>
       )}

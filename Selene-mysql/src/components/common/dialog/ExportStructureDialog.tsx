@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Copy } from "lucide-react";
 import { executeSQL } from "@/db/msyql-client";
+import { useI18n } from "@/i18n";
 
 interface ExportStructureDialogProps {
   open: boolean;
@@ -25,6 +26,7 @@ export function ExportStructureDialog({
   dbName,
   tableName,
 }: ExportStructureDialogProps) {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [createSQL, setCreateSQL] = useState<string>("");
 
@@ -46,10 +48,10 @@ export function ExportStructureDialog({
         const createStatement = result.data.rows[0][1];
         setCreateSQL(createStatement);
       } else {
-        toast.error("无法获取表结构: " + result.message);
+        toast.error(t('common.error') + ": " + result.message);
       }
     } catch (error) {
-      toast.error(`获取表结构失败: ${error}`);
+      toast.error(t('common.error') + `: ${error}`);
     } finally {
       setLoading(false);
     }
@@ -57,24 +59,24 @@ export function ExportStructureDialog({
 
   const handleCopy = () => {
     navigator.clipboard.writeText(createSQL);
-    toast.success("已复制到剪贴板");
+    toast.success(t('export.copied'));
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>导出表结构 - {tableName}</DialogTitle>
+          <DialogTitle>{t('export.dialog.title')} - {tableName}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">加载中...</div>
+            <div className="text-center py-8 text-muted-foreground">{t('export.loading')}</div>
           ) : (
             <>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" size="sm" onClick={handleCopy}>
-                  <Copy className="w-4 h-4 mr-1" /> 复制
+                  <Copy className="w-4 h-4 mr-1" /> {t('export.copy')}
                 </Button>
               </div>
               <pre className="bg-black/90 text-gray-100 p-4 rounded-md overflow-auto max-h-[400px] text-xs font-mono">

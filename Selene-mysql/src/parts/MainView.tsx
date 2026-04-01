@@ -2,20 +2,22 @@ import { useConnectionStore } from "@/store/useConnectionStore";
 import ConnectionManager from "@/modules/ConnectionManager";
 import DataBaseView from "@/modules/DataBaseView";
 import BaseSettings from "@/modules/settings/BaseSettings";
+import { useI18n } from "@/i18n";
 
 /**
  * 右边动态内容区域
  */
 export default function MainView({ tabId }: { tabId: string | null }) {
   const connectiontabs = useConnectionStore((s) => s.connectiontabs);
+  const { t } = useI18n();
 
   // 如果没有选中的 tab，显示空状态
   if (!tabId) {
     return (
       <div className="flex flex-1 items-center justify-center text-muted-foreground">
         <div className="text-center">
-          <p className="text-lg mb-2">暂无内容</p>
-          <p className="text-sm">点击左侧菜单打开数据库连接或设置</p>
+          <p className="text-lg mb-2">{t('main.empty')}</p>
+          <p className="text-sm">{t('main.hint')}</p>
         </div>
       </div>
     );
@@ -29,8 +31,8 @@ export default function MainView({ tabId }: { tabId: string | null }) {
     return (
       <div className="flex flex-1 items-center justify-center text-muted-foreground">
         <div className="text-center">
-          <p className="text-lg mb-2">暂无内容</p>
-          <p className="text-sm">点击左侧菜单打开数据库连接或设置</p>
+          <p className="text-lg mb-2">{t('main.empty')}</p>
+          <p className="text-sm">{t('main.hint')}</p>
         </div>
       </div>
     );

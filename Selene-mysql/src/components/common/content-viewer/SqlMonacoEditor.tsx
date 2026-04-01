@@ -8,6 +8,7 @@ import { useConnectionStore } from "@/store/useConnectionStore";
 import { ExecResult, ExecResultProps } from "@/types";
 import { EditableResultTable } from "@/modules/ExecResultTable";
 import { X } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 // 使用本地 Monaco（通过 vite optimizeDeps 预加载）
 // export default function SqlMonacoEditor({dbKey}: { dbKey: string | null }) {
@@ -21,6 +22,7 @@ export const SqlMonacoEditor: React.FC<ExecResultProps & { execResult?: ExecResu
   onSaveAs,
   onContentChange,
 }) => {
+  const { t } = useI18n();
   // 获取当前主题
   const [editorTheme, setEditorTheme] = useState("vs-light");
   const [monacoLoaded, setMonacoLoaded] = useState(false);
@@ -374,11 +376,11 @@ export const SqlMonacoEditor: React.FC<ExecResultProps & { execResult?: ExecResu
       {execResult && (
         <div className="flex-1 min-h-0 overflow-auto p-2 flex flex-col" style={{ borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-foreground">执行结果</span>
+            <span className="text-sm font-medium text-foreground">{t('table.result')}</span>
             <span
               className="text-muted-foreground hover:text-foreground cursor-pointer"
               onClick={onClearResult}
-              title="关闭结果"
+              title={t('table.closeResult')}
             >
               <X className="w-4 h-4" />
             </span>

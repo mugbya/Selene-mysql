@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { executeSQL } from "@/db/msyql-client";
+import { useI18n } from "@/i18n";
 
 interface CreateDatabaseDialogProps {
   open: boolean;
@@ -24,19 +25,20 @@ export function CreateDatabaseDialog({
   dbKey,
   onSuccess,
 }: CreateDatabaseDialogProps) {
+  const { t } = useI18n();
   const [dbName, setDbName] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleCreate = async () => {
     if (!dbName.trim()) {
-      toast.error("请输入数据库名称");
+      toast.error(t('common.inputRequired'));
       return;
     }
 
     // 验证数据库名称格式（允许包含连字符）
     const namePattern = /^[a-zA-Z_][a-zA-Z0-9_-]*$/;
     if (!namePattern.test(dbName)) {
-      toast.error("数据库名称只能包含字母、数字、下划线和连字符，且不能以数字开头");
+      toast.error(t('common.invalidName'));
       return;
     }
 
@@ -46,15 +48,15 @@ export function CreateDatabaseDialog({
       const result = await executeSQL(dbKey, sql);
 
       if (result.success) {
-        toast.success(`数据库 ${dbName} 创建成功`);
+        toast.success(t('database.created'));
         setDbName("");
         onSuccess(dbName);
         onClose();
       } else {
-        toast.error("创建失败: " + result.message);
+        toast.error(t('common.error') + ": " + result.message);
       }
     } catch (error) {
-      toast.error(`创建失败: ${error}`);
+      toast.error(t('common.error') + `: ${error}`);
     } finally {
       setLoading(false);
     }
@@ -69,14 +71,14 @@ export function CreateDatabaseDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>新建数据库</DialogTitle>
+          <DialogTitle>{t('database.new')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">数据库名称</label>
+            <label className="text-sm font-medium">{t('database.name')}</label>
             <Input
-              placeholder="请输入数据库名称"
+              placeholder={t('database.name')}
               value={dbName}
               onChange={(e) => setDbName(e.target.value)}
               onKeyDown={(e) => {
@@ -84,17 +86,17 @@ export function CreateDatabaseDialog({
               }}
             />
             <p className="text-xs text-muted-foreground">
-              只能包含字母、数字、下划线和连字符，且不能以数字开头
+              {t('database.nameHint')}
             </p>
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
-            取消
+            {t('common.cancel')}
           </Button>
           <Button onClick={handleCreate} disabled={loading || !dbName.trim()}>
-            {loading ? "创建中..." : "创建"}
+            {loading ? t('common.creating') : t('common.confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>

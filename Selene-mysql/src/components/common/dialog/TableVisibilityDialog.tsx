@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
 import { Check, X, CheckSquare, XCircle, Save, List } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 interface TableVisibilityDialogProps {
   open: boolean;
@@ -31,6 +32,7 @@ export function TableVisibilityDialog({
   onLoadTables,
   onSave,
 }: TableVisibilityDialogProps) {
+  const { t } = useI18n();
   const [selected, setSelected] = useState<string[]>(visibleTables);
 
   useEffect(() => {
@@ -55,10 +57,10 @@ export function TableVisibilityDialog({
         <DialogHeader style={{ marginBottom: '12px' }}>
           <DialogTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <List className="w-4 h-4" />
-            表显示控制
+            {t('table.visibility')}
           </DialogTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            选择需要在树形视图中显示的表
+            {t('table.visibility.desc')}
           </p>
         </DialogHeader>
 
@@ -75,13 +77,13 @@ export function TableVisibilityDialog({
           }}
         >
           <span className="text-sm" style={{ color: 'var(--foreground)' }}>
-            已选择 <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{selected.length}</span> / {tablesCount ?? tables.length} 个
+            {t('table.visibility.selected')} <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{selected.length}</span> / {tablesCount ?? tables.length} {t('table.visibility.items')}
           </span>
           <div style={{ display: 'flex', gap: '4px' }}>
             <div
               className="p-1.5 hover:bg-accent rounded cursor-pointer"
               onClick={() => setSelected(tables.length > 0 ? [...tables] : (tablesCount ? Array.from({ length: tablesCount }, (_, i) => `table_${i}`) : []))}
-              title="全选"
+              title={t('table.visibility.selectAll')}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <CheckSquare className="w-4 h-4" style={{ color: 'var(--foreground)' }} />
@@ -89,7 +91,7 @@ export function TableVisibilityDialog({
             <div
               className="p-1.5 hover:bg-accent rounded cursor-pointer"
               onClick={() => setSelected([])}
-              title="清除"
+              title={t('table.visibility.clear')}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <XCircle className="w-4 h-4" style={{ color: 'var(--foreground)' }} />
@@ -148,7 +150,7 @@ export function TableVisibilityDialog({
             </div>
           )) : tablesCount ? (
             <div style={{ padding: '12px', textAlign: 'center', color: 'var(--muted-foreground)' }}>
-              正在加载表列表...
+              {t('common.loading')}
             </div>
           ) : null}
         </div>
@@ -158,7 +160,7 @@ export function TableVisibilityDialog({
           <div
             onClick={onClose}
             className="p-2 hover:bg-accent rounded cursor-pointer"
-            title="取消"
+            title={t('common.cancel')}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             <X className="w-4 h-4" style={{ color: 'var(--foreground)' }} />
@@ -169,7 +171,7 @@ export function TableVisibilityDialog({
               onClose();
             }}
             className="p-2 hover:bg-accent rounded cursor-pointer"
-            title="保存"
+            title={t('common.save')}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             <Save className="w-4 h-4" style={{ color: 'var(--primary)' }} />

@@ -10,6 +10,7 @@ import { Table, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useConnectionStore } from "@/store/useConnectionStore";
 import { ColumnSchema } from "@/types";
+import { useI18n } from "@/i18n";
 
 export function TableTreeLeaf({
   dbkey,
@@ -21,10 +22,11 @@ export function TableTreeLeaf({
   tableName: string;
 }) {
   const { openContentTab } = useConnectionStore();
+  const { t } = useI18n();
 
   const openTable = async () => {
     if (!dbkey) {
-      console.error("数据库连接失败");
+      console.error(t('error.noConnection'));
       return;
     }
     console.log(`[打开表] ${dbName}.${tableName}`);
@@ -39,7 +41,7 @@ export function TableTreeLeaf({
         tabId: `query_${dbName}.${tableName}`,
         title: `${dbName} - ${tableName}`,
         tabType: "query",
-        content: `-- 查询失败\n-- ${errorMsg}\n\n${text}`,
+        content: `-- ${t('error.queryFailed')}\n-- ${errorMsg}\n\n${text}`,
         databaseName: `${dbName}`,
         tableName: `${tableName}`,
         isSaved: false,
@@ -49,7 +51,7 @@ export function TableTreeLeaf({
     }
 
     if (!result.data) {
-      console.error("查询未返回数据");
+      console.error(t('query.noResult'));
       return;
     }
 
@@ -69,7 +71,7 @@ export function TableTreeLeaf({
   const dropTable = async () => {
     console.log("[dropTable] 开始删除, dbkey:", dbkey, "dbName:", dbName, "tableName:", tableName);
     if (!dbkey) {
-      toast.error("数据库连接失败");
+      toast.error(t('error.noConnection'));
       return;
     }
 
@@ -82,21 +84,21 @@ export function TableTreeLeaf({
       const result = await executeSQL(dbkey, `DROP TABLE \`${dbName}\`.\`${tableName}\``);
       console.log("[dropTable] 删除结果:", result);
       if (result.success) {
-        toast.success(`表 ${tableName} 删除成功`);
+        toast.success(t('table.deleteSuccess', { tableName }));
       } else {
-        toast.error("删除失败: " + result.message);
+        toast.error(t('table.deleteFailed', { message: result.message }));
       }
       // 发送事件通知刷新表列表（无论成功失败都发送，让前端更新状态）
       window.dispatchEvent(new CustomEvent('table-dropped', { detail: { dbKey: dbkey, dbName, tableName } }));
     } catch (error) {
       console.error("[dropTable] 错误:", error);
-      toast.error("删除失败: " + error);
+      toast.error(t('table.deleteFailed', { message: String(error) }));
     }
   };
 
   const modifyTableStructure  = async () => {
     if (!dbkey) {
-      toast.error(`数据库连接失败`, { closeButton: true });
+      toast.error(t('error.noConnection'), { closeButton: true });
       return;
     }
     console.log(`[设计表] ${dbName}.${tableName}`);
@@ -118,11 +120,11 @@ export function TableTreeLeaf({
     console.log(text);
     const result = await executeSQL(dbkey, text);
     if (!result.success) {
-      toast.error(`查询失败 ${result.message}`, { closeButton: true });
+      toast.error(`${t('error.queryFailed')} ${result.message}`, { closeButton: true });
       return;
     }
     if (!result.data) {
-      toast.error(`查询未返回数据`, { closeButton: true });
+      toast.error(t('query.noResult'), { closeButton: true });
       return;
     }
 
@@ -180,14 +182,14 @@ export function TableTreeLeaf({
 
     const new_result = {
       columns: [
-        "字段名",
-        "类型",
-        "长度",
-        "主键",
-        "唯一键",
-        "可空",
-        "默认值",
-        "注释",
+        t('table.columnName'),
+        t('table.type'),
+        t('table.length'),
+        t('table.primary'),
+        t('table.unique'),
+        t('table.null'),
+        t('table.default'),
+        t('table.comment'),
       ],
       rows: newRows,
       rows_affected: result.data.rows_affected,
@@ -195,7 +197,7 @@ export function TableTreeLeaf({
 
     openContentTab({
       tabId: `struct_${dbName}.${tableName}`,
-      title: `设计${dbName} - ${tableName}`,
+      title: `${t('table.design')} ${dbName} - ${tableName}`,
       tabType: "tableStructure",
       databaseName: `${dbName}`,
       tableName: `${tableName}`,
@@ -217,7 +219,7 @@ export function TableTreeLeaf({
     } else if (dbType === 'mssql') {
       return `ALTER TABLE ${table} ALTER COLUMN ${column.name} ${typeExpr};`;
     } else if (dbType === 'sqlite') {
-      return '-- SQLite 不支持直接修改字段，需重建表';
+      return `-- ${t('table.sqliteNotSupported')}`;
     }
     return '';
   }
@@ -237,29 +239,29 @@ export function TableTreeLeaf({
 
         <ContextMenuContent className="w-48">
           {/* <ContextMenuLabel>表操作</ContextMenuLabel> */}
-          <ContextMenuItem onClick={() => openTable()}>打开表</ContextMenuItem>
-          <ContextMenuItem onClick={() => modifyTableStructure()}>设计表</ContextMenuItem>
+          <ContextMenuItem onClick={() => openTable()}>{t('table.open')}</ContextMenuItem>
+          <ContextMenuItem onClick={() => modifyTableStructure()}>{t('table.design')}</ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem onClick={() => { console.log("delete clicked"); dropTable(); }}>
-            删除表
+            {t('table.delete')}
           </ContextMenuItem>
           {/* <ContextMenuItem onClick={() => openTable("truncate")}>清空表</ContextMenuItem> */}
 
           <ContextMenuSeparator />
           <ContextMenuItem onClick={() => {
             if (!dbkey) {
-              toast.error("数据库连接失败");
+              toast.error(t('error.noConnection'));
               return;
             }
             openContentTab({
               tabId: `export_${dbName}_${tableName}`,
-              title: `导出 ${tableName}`,
+              title: `${t('table.export')} ${tableName}`,
               tabType: "tableExport",
               databaseName: dbName,
               tableName: tableName,
               dbKey: dbkey,
             });
-          }}>导出表结构</ContextMenuItem>
+          }}>{t('table.export')}</ContextMenuItem>
           {/* <ContextMenuSeparator /> */}
           {/* <ContextMenuItem onClick={() => handleAction("control")}>表显示控制</ContextMenuItem> */}
           {/* <ContextMenuSeparator /> */}

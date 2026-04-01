@@ -4,6 +4,7 @@ import { DBConnectionPersisted, DBConnectionRuntime } from '@/types';
 import { TreeNode as TreeNodeType } from '@/modules/ConnectionManager';
 import { Input } from '@/components/ui/input';
 import { Eye, EyeOff, ChevronRight, ChevronDown, FolderClosed, FolderOpen } from 'lucide-react';
+import { useI18n } from '@/i18n';
 
 interface Props {
   open: boolean;
@@ -29,6 +30,7 @@ export default function ConnectionFormDialog({
   currentParentId,
   editingNodeId,
 }: Props) {
+  const { t } = useI18n();
 
   const [form, setForm] = useState<DBConnectionRuntime>({
     id: crypto.randomUUID(),
@@ -76,9 +78,9 @@ export default function ConnectionFormDialog({
 
   // 获取显示名称
   const getFolderName = (folderId: string | null): string => {
-    if (!folderId) return '根目录';
+    if (!folderId) return t('connection.root');
     const folder = folders.find(f => f.id === folderId);
-    return folder?.name || '根目录';
+    return folder?.name || t('connection.root');
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -187,7 +189,7 @@ export default function ConnectionFormDialog({
       <div className="bg-background p-4 rounded border border-border w-[420px] flex flex-col">
         <div className='flex items-center gap-2 pb-3 border-b'>
           <SiMysql className="text-yellow-600 w-8 h-8" />
-          <h3 className="text-base font-medium">数据库连接</h3>
+          <h3 className="text-base font-medium">{t('connection.new')}</h3>
         </div>
 
         <div className="py-3 space-y-2">
@@ -225,7 +227,7 @@ export default function ConnectionFormDialog({
                 >
                   <span className="w-3" />
                   <FolderClosed className="w-4 h-4 text-yellow-500" />
-                  <span className="text-sm">根目录</span>
+                  <span className="text-sm">{t('connection.root')}</span>
                 </div>
                 {renderFolderTree(rootFolders)}
               </div>
@@ -234,34 +236,34 @@ export default function ConnectionFormDialog({
 
           {/* 连接名称 */}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground w-16 shrink-0">名称</label>
-            <Input name="name" value={form.name} onChange={handleChange} placeholder="连接名称" className="!h-7 flex-1" />
+            <label className="text-xs text-muted-foreground w-16 shrink-0">{t('connection.name')}</label>
+            <Input name="name" value={form.name} onChange={handleChange} placeholder={t('connection.name')} className="!h-7 flex-1" />
           </div>
 
           {/* 主机和端口 */}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground w-16 shrink-0">主机</label>
+            <label className="text-xs text-muted-foreground w-16 shrink-0">{t('connection.host')}</label>
             <Input name="host" value={form.host} onChange={handleChange} placeholder="localhost" className="!h-7 w-40" />
-            <label className="text-xs text-muted-foreground w-10 shrink-0">端口</label>
+            <label className="text-xs text-muted-foreground w-10 shrink-0">{t('connection.port')}</label>
             <Input name="port" type="number" value={form.port} onChange={handleChange} className="!h-7 w-24" />
           </div>
 
           {/* 用户名 */}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground w-16 shrink-0">用户名</label>
+            <label className="text-xs text-muted-foreground w-16 shrink-0">{t('connection.user')}</label>
             <Input name="username" value={form.username} onChange={handleChange} placeholder="root" className="!h-7 flex-1" />
           </div>
 
           {/* 密码 */}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground w-16 shrink-0">密码</label>
+            <label className="text-xs text-muted-foreground w-16 shrink-0">{t('connection.password')}</label>
             <div className="flex-1 relative">
               <Input
                 type={showPassword ? "text" : "password"}
                 name="password"
                 value={form.password}
                 onChange={handleChange}
-                placeholder="密码"
+                placeholder={t('connection.password')}
                 className="!h-7 pr-7 w-full"
               />
               <span
@@ -276,10 +278,10 @@ export default function ConnectionFormDialog({
 
         <div className="flex justify-end gap-2 pt-2 border-t">
           <button className="px-3 py-1 text-sm bg-muted hover:bg-accent rounded text-foreground" onClick={onClose}>
-            取消
+            {t('common.cancel')}
           </button>
           <button className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90" onClick={handleSubmit}>
-            保存
+            {t('common.save')}
           </button>
         </div>
       </div>

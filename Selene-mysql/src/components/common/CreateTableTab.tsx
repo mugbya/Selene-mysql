@@ -13,6 +13,7 @@ import { executeSQL } from "@/db/msyql-client";
 import { fetchTables } from "@/db/msyql-client";
 import { nanoid } from "nanoid";
 import { Trash2, Plus, Play, Copy, Check } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 interface Column {
   id: string;
@@ -64,6 +65,7 @@ const DEFAULT_COLUMN: Column = {
 };
 
 export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps) {
+  const { t } = useI18n();
   const effectiveDbName = dbName || "";
   const [tableNameInput, setTableNameInput] = useState(tableName || "");
   const [columns, setColumns] = useState<Column[]>([
@@ -79,7 +81,7 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
 
   const removeColumn = (id: string) => {
     if (columns.length <= 1) {
-      toast.error("至少需要一个字段");
+      toast.error(t('table.minColumnRequired'));
       return;
     }
     setColumns(columns.filter((col) => col.id !== id));
@@ -178,17 +180,17 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
 
   const validateColumns = (): boolean => {
     if (!tableNameInput.trim()) {
-      toast.error("请输入表名");
+      toast.error(t('table.enterTableName'));
       return false;
     }
     const namePattern = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
     for (const col of columns) {
       if (!col.name.trim()) {
-        toast.error("请填写所有字段名");
+        toast.error(t('table.fillAllColumnNames'));
         return false;
       }
       if (!namePattern.test(col.name)) {
-        toast.error(`字段名 "${col.name}" 格式不正确`);
+        toast.error(t('table.columnNameInvalid', { name: col.name }));
         return false;
       }
     }
@@ -214,17 +216,17 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
       console.log("[CreateTableTab] 执行结果:", result);
 
       if (result.success) {
-        setExecResult({ success: true, message: `表 ${tableNameInput} 创建成功` });
+        setExecResult({ success: true, message: t('table.createSuccess', { tableName: tableNameInput }) });
         // 刷新表列表
         await fetchTables(dbKey, effectiveDbName);
         // 发送事件通知刷新表列表
         console.log("[CreateTableTab] 发送 table-created 事件, dbKey:", dbKey, "dbName:", effectiveDbName);
         window.dispatchEvent(new CustomEvent('table-created', { detail: { dbKey, dbName: effectiveDbName } }));
       } else {
-        setExecResult({ success: false, message: String(result.message).replace("Query failed", "执行失败") });
+        setExecResult({ success: false, message: t('table.executionFailed') + ": " + result.message });
       }
     } catch (error) {
-      setExecResult({ success: false, message: String(error).replace("Query failed", "执行失败") });
+      setExecResult({ success: false, message: t('table.executionFailed') + ": " + error });
     } finally {
       setLoading(false);
     }
@@ -235,9 +237,9 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
       {/* 工具栏 */}
       <div className="flex items-center gap-4 p-2 border-b bg-muted">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">表名:</span>
+          <span className="text-sm font-medium">{t('table.name')}:</span>
           <Input
-            placeholder="请输入表名"
+            placeholder={t('table.name')}
             value={tableNameInput}
             onChange={(e) => setTableNameInput(e.target.value)}
             className="w-48 h-8"
@@ -246,10 +248,10 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
           />
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={addColumn} variant="ghost" size="sm" title="添加字段">
+          <Button onClick={addColumn} variant="ghost" size="sm" title={t('table.addColumn')}>
             <Plus className="w-3 h-3" />
           </Button>
-          <Button onClick={handleCreate} disabled={loading} variant="ghost" size="sm" title={loading ? "创建中..." : "执行创建"}>
+          <Button onClick={handleCreate} disabled={loading} variant="ghost" size="sm" title={loading ? t('table.creating') : t('toolbar.run')}>
             <Play className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
@@ -268,14 +270,14 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
         <div className="border rounded-md">
           {/* 表头 */}
           <div className="grid grid-cols-12 gap-2 p-2 bg-muted text-xs font-medium text-muted-foreground">
-            <div className="col-span-2">字段名</div>
-            <div className="col-span-2">类型</div>
-            <div className="col-span-1">长度</div>
-            <div className="col-span-1 text-center">主键</div>
-            <div className="col-span-1 text-center">自增</div>
-            <div className="col-span-1 text-center">非空</div>
-            <div className="col-span-2">默认值</div>
-            <div className="col-span-1">注释</div>
+            <div className="col-span-2">{t('table.fieldName')}</div>
+            <div className="col-span-2">{t('table.fieldType')}</div>
+            <div className="col-span-1">{t('table.columnLength')}</div>
+            <div className="col-span-1 text-center">{t('table.primary')}</div>
+            <div className="col-span-1 text-center">{t('table.autoIncrement')}</div>
+            <div className="col-span-1 text-center">{t('table.null')}</div>
+            <div className="col-span-2">{t('table.defaultValue')}</div>
+            <div className="col-span-1">{t('table.columnComment')}</div>
             <div className="col-span-1"></div>
           </div>
 
@@ -287,7 +289,7 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
             >
               <div className="col-span-2">
                 <Input
-                  placeholder="字段名"
+                  placeholder={t('table.fieldName')}
                   value={col.name}
                   onChange={(e) => updateColumn(col.id, "name", e.target.value)}
                   className="h-8"
@@ -314,7 +316,7 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
               </div>
               <div className="col-span-1">
                 <Input
-                  placeholder="长度"
+                  placeholder={t('table.columnLength')}
                   value={col.length}
                   onChange={(e) => updateColumn(col.id, "length", e.target.value)}
                   disabled={!["VARCHAR", "CHAR", "DECIMAL"].includes(col.type)}
@@ -348,7 +350,7 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
               </div>
               <div className="col-span-2">
                 <Input
-                  placeholder="默认值"
+                  placeholder={t('table.defaultValue')}
                   value={col.default}
                   onChange={(e) => updateColumn(col.id, "default", e.target.value)}
                   className="h-8"
@@ -356,7 +358,7 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
               </div>
               <div className="col-span-1">
                 <Input
-                  placeholder="注释"
+                  placeholder={t('table.columnComment')}
                   value={col.comment}
                   onChange={(e) => updateColumn(col.id, "comment", e.target.value)}
                   className="h-8"
@@ -380,13 +382,13 @@ export function CreateTableTab({ dbKey, dbName, tableName }: CreateTableTabProps
       {/* SQL 预览 */}
       <div className="border-t p-2 bg-muted">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium text-muted-foreground">SQL 预览:</span>
+          <span className="text-xs font-medium text-muted-foreground">{t('table.sqlPreview')}:</span>
           <Button
             variant="ghost"
             size="sm"
             className="h-5 w-5 p-0"
             onClick={copySQL}
-            title={copied ? "已复制" : "复制"}
+            title={copied ? t('table.copied') : t('table.copy')}
           >
             {copied ? (
               <Check className="w-3 h-3 text-green-600" />

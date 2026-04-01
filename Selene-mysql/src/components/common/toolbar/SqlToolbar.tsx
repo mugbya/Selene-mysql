@@ -1,5 +1,6 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlignJustify, FilePlus, Play, Save } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 type SqlToolbarProps = {
     handleRun: () => void;
@@ -9,6 +10,7 @@ type SqlToolbarProps = {
   };
 
   const SqlToolbar: React.FC<SqlToolbarProps> = ({ handleRun, handleFormat, handleSave, handleSaveAs }) => {
+    const { t } = useI18n();
     const buttonStyle = {
       backgroundColor: 'transparent',
       border: 'none',
@@ -36,7 +38,7 @@ type SqlToolbarProps = {
             <Play className="w-3 h-3" />
           </button>
         </TooltipTrigger>
-        <TooltipContent>执行 SQL</TooltipContent>
+        <TooltipContent>{t('toolbar.run')}</TooltipContent>
       </Tooltip>
 
       <Tooltip>
@@ -45,7 +47,7 @@ type SqlToolbarProps = {
             <Save className="w-3 h-3" />
           </button>
         </TooltipTrigger>
-        <TooltipContent>保存查询</TooltipContent>
+        <TooltipContent>{t('toolbar.save')}</TooltipContent>
       </Tooltip>
 
       <Tooltip>
@@ -54,7 +56,7 @@ type SqlToolbarProps = {
             <FilePlus className="w-3 h-3" />
           </button>
         </TooltipTrigger>
-        <TooltipContent>另存为</TooltipContent>
+        <TooltipContent>{t('toolbar.saveAs')}</TooltipContent>
       </Tooltip>
 
       <Tooltip>
@@ -63,7 +65,7 @@ type SqlToolbarProps = {
             <AlignJustify className="w-3 h-3" />
           </button>
         </TooltipTrigger>
-        <TooltipContent>格式化 SQL</TooltipContent>
+        <TooltipContent>{t('toolbar.format')}</TooltipContent>
       </Tooltip>
     </div>
     );
