@@ -8,9 +8,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Copy, Download, Loader2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { executeSQL } from "@/db/msyql-client";
 import { useI18n } from "@/i18n";
+import { save } from "@tauri-apps/plugin-dialog";
+import { writeTextFile } from "@tauri-apps/plugin-fs";
 
 interface ExportWizardDialogProps {
   open: boolean;
@@ -32,16 +34,13 @@ export function ExportWizardDialog({
   const [includeStructure, setIncludeStructure] = useState(true);
   const [includeData, setIncludeData] = useState(true);
   const [extendedInsert, setExtendedInsert] = useState(true);
-  const [extendedInsertRows, setExtendedInsertRows] = useState(100);
-  const [loading, setLoading] = useState(false);
+  const [extendedInsertRows, setExtendedInsertRows] = useState(1500);
   const [exporting, setExporting] = useState(false);
-  const [exportResult, setExportResult] = useState<string>("");
 
   useEffect(() => {
     if (open) {
       // 初始化全选
       setSelectedTables(new Set(tables));
-      setExportResult("");
     }
   }, [open, tables]);
 
@@ -71,14 +70,35 @@ export function ExportWizardDialog({
       return;
     }
 
-    setExporting(true);
-    let sqlOutput = "";
+    // 先让用户选择保存路径
+    const date = new Date().toISOString().slice(0, 10);
+    const defaultFileName = `${dbName}_${date}.sql`;
 
     try {
+      const filePath = await save({
+        defaultPath: defaultFileName,
+        filters: [{
+          name: 'SQL Files',
+          extensions: ['sql']
+        }, {
+          name: 'All Files',
+          extensions: ['*']
+        }]
+      });
+
+      // 如果用户取消选择
+      if (!filePath) {
+        return;
+      }
+
+      // 开始导出
+      setExporting(true);
+      let sqlOutput = "";
+
       // 导出表结构
       if (includeStructure) {
         for (const table of selectedTables) {
-          const result = await executeSQL(dbKey, `SHOW CREATE TABLE \`${table}\``);
+          const result = await executeSQL(dbKey, `SHOW CREATE TABLE \`${dbName}\`.\`${table}\``);
           if (result.success && result.data && result.data.rows.length > 0) {
             sqlOutput += result.data.rows[0][1] + ";\n\n";
           }
@@ -108,7 +128,7 @@ export function ExportWizardDialog({
           while (hasMore) {
             const dataResult = await executeSQL(
               dbKey,
-              `SELECT * FROM \`${table}\` LIMIT ${offset}, ${pageSize}`
+              `SELECT * FROM \`${dbName}\`.\`${table}\` LIMIT ${offset}, ${pageSize}`
             );
 
             if (!dataResult.success || !dataResult.data || dataResult.data.rows.length === 0) {
@@ -136,7 +156,7 @@ export function ExportWizardDialog({
                 .join(",\n");
 
               if (valuesList) {
-                sqlOutput += `INSERT INTO \`${table}\` (\`${columns.join("`, `")}\`) VALUES\n${valuesList};\n\n`;
+                sqlOutput += `INSERT INTO \`${dbName}\`.\`${table}\` (\`${columns.join("`, `")}\`) VALUES\n${valuesList};\n\n`;
               }
             } else {
               // 普通模式：每行一个 INSERT
@@ -149,7 +169,7 @@ export function ExportWizardDialog({
                     return `'${String(cell).replace(/'/g, "''")}'`;
                   })
                   .join(", ");
-                sqlOutput += `INSERT INTO \`${table}\` (\`${columns.join("`, `")}\`) VALUES (${values});\n`;
+                sqlOutput += `INSERT INTO \`${dbName}\`.\`${table}\` (\`${columns.join("`, `")}\`) VALUES (${values});\n`;
               }
               sqlOutput += "\n";
             }
@@ -160,18 +180,15 @@ export function ExportWizardDialog({
         }
       }
 
-      setExportResult(sqlOutput);
-      toast.success(t('export.success'));
+      // 保存文件
+      await writeTextFile(filePath, sqlOutput);
+      toast.success(t('export.saved'));
+      onClose();
     } catch (error) {
-      toast.error(t('export.failed') + `: ${error}`);
+      toast.error(t('export.saveFailed') + `: ${error}`);
     } finally {
       setExporting(false);
     }
-  };
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(exportResult);
-    toast.success(t('export.copied'));
   };
 
   return (
@@ -197,7 +214,7 @@ export function ExportWizardDialog({
                 </Button>
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-2 max-h-[200px] overflow-auto border rounded p-2">
+            <div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-auto border rounded p-2">
               {tables.map((table) => (
                 <label
                   key={table}
@@ -238,7 +255,7 @@ export function ExportWizardDialog({
             </div>
 
             {includeData && (
-              <div className="flex items-center space-x-4 pl-6">
+              <div className="flex items-center space-x-4 pl-6 flex-wrap">
                 <label className="flex items-center space-x-2">
                   <input
                     type="checkbox"
@@ -249,35 +266,20 @@ export function ExportWizardDialog({
                 </label>
                 {extendedInsert && (
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm">{t('export.rowsPerInsert')}</span>
+                    <span className="text-sm whitespace-nowrap">{t('export.rowsPerInsert', { count: extendedInsertRows })}</span>
                     <input
                       type="number"
-                      className="w-16 h-8 border rounded px-2"
+                      className="w-24 h-8 border rounded px-2"
                       value={extendedInsertRows}
-                      onChange={(e) => setExtendedInsertRows(parseInt(e.target.value) || 100)}
+                      onChange={(e) => setExtendedInsertRows(parseInt(e.target.value) || 1500)}
                       min={1}
-                      max={1000}
+                      max={10000}
                     />
                   </div>
                 )}
               </div>
             )}
           </div>
-
-          {/* 导出结果 */}
-          {exportResult && (
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">{t('export.result')}</span>
-                <Button variant="outline" size="sm" onClick={handleCopy}>
-                  <Copy className="w-4 h-4 mr-1" /> {t('export.copy')}
-                </Button>
-              </div>
-              <pre className="bg-black/90 text-gray-100 p-4 rounded-md overflow-auto max-h-[300px] text-xs font-mono">
-                {exportResult}
-              </pre>
-            </div>
-          )}
         </div>
 
         <DialogFooter>
@@ -286,7 +288,7 @@ export function ExportWizardDialog({
           </Button>
           <Button onClick={handleExport} disabled={exporting || selectedTables.size === 0}>
             {exporting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {exporting ? t('export.exporting') : t('export.download')}
+            {exporting ? t('export.exporting') : t('export.export')}
           </Button>
         </DialogFooter>
       </DialogContent>

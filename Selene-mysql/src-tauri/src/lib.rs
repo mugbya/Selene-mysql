@@ -39,6 +39,8 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init()) // 让你的 Tauri 应用可以打开本地文件或 URL，比如在浏览器中打开网页、用系统默认程序打开文件等
+        .plugin(tauri_plugin_dialog::init()) // 允许用户选择文件保存路径
+        .plugin(tauri_plugin_fs::init()) // 允许读写文件系统
         // .plugin(tauri_plugin_sql::Builder::default().build()) // 让你的 Tauri 应用拥有本地数据库能力，可以用 SQL 语句操作 SQLite、MySQL、PostgreSQL 等数据库
         // .invoke_handler(tauri::generate_handler![greet])
         .manage(database_manager)
