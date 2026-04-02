@@ -282,6 +282,20 @@ const translations: Record<Language, Record<string, string>> = {
     'export.fileName': '文件名',
     'export.export': '导出',
 
+    // 导入相关
+    'import.title': '导入SQL',
+    'import.selectFile': '选择SQL文件',
+    'import.change': '更换',
+    'import.preview': 'SQL预览',
+    'import.truncated': '（共 {length} 字符，仅显示前5000字符）',
+    'import.import': '导入',
+    'import.importing': '导入中...',
+    'import.success': '导入成功，共执行 {count} 条SQL',
+    'import.failed': '导入失败',
+    'import.partialSuccess': '部分成功：成功 {success} 条，失败 {failed} 条',
+    'import.noContent': '没有可导入的内容',
+    'import.selectFailed': '选择文件失败',
+
     // 其他
     'menu.connection': '连接',
     'menu.database': '数据库',
@@ -571,6 +585,20 @@ const translations: Record<Language, Record<string, string>> = {
     'export.noContent': 'No content to export',
     'export.fileName': 'File name',
     'export.export': 'Export',
+
+    // Import
+    'import.title': 'Import SQL',
+    'import.selectFile': 'Select SQL File',
+    'import.change': 'Change',
+    'import.preview': 'SQL Preview',
+    'import.truncated': '({length} characters total, showing first 5000)',
+    'import.import': 'Import',
+    'import.importing': 'Importing...',
+    'import.success': 'Import successful, {count} SQL statements executed',
+    'import.failed': 'Import failed',
+    'import.partialSuccess': 'Partial success: {success} succeeded, {failed} failed',
+    'import.noContent': 'No content to import',
+    'import.selectFailed': 'Failed to select file',
 
     // 其他
     'menu.connection': 'Connection',

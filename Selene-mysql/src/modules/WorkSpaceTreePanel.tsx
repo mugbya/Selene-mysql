@@ -21,6 +21,7 @@ import { TreeNode } from "@/components/common/tree-panel/TreeNode";
 import { TableTreeLeaf } from "@/components/common/tree-panel/TableTreeLeaf";
 import { TableVisibilityDialog } from "@/components/common/dialog/TableVisibilityDialog";
 import { ExportWizardDialog } from "@/components/common/dialog/ExportWizardDialog";
+import { ImportDialog } from "@/components/common/dialog/ImportDialog";
 import { CreateDatabaseDialog } from "@/components/common/dialog/CreateDatabaseDialog";
 import { fetchTables } from "@/db/msyql-client";
 import { useSavedQueries, getSavedQueryContent } from "@/hooks/useSavedQueries";
@@ -53,6 +54,7 @@ function WorkSpaceTreePanel({
   const [dialogTargetDB, setDialogTargetDB] = useState<DatabaseTree | null>(null);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportTargetDB, setExportTargetDB] = useState<string>("");
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [createDbDialogOpen, setCreateDbDialogOpen] = useState(false);
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [filterDbList, setFilterDbList] = useState<string[]>([]);
@@ -336,6 +338,9 @@ function WorkSpaceTreePanel({
       setExportTargetDB(dbName);
       setExportDialogOpen(true);
     }
+    if (action === "import") {
+      setImportDialogOpen(true);
+    }
     if (action === "create" && dbKey) {
       // 打开新建表 tab
       const newTabId = nanoid();
@@ -478,6 +483,13 @@ function WorkSpaceTreePanel({
         dbKey={dbKey || ""}
         dbName={exportTargetDB}
         tables={dbTrees.find(db => db.name === exportTargetDB)?.tables ?? []}
+      />
+
+      <ImportDialog
+        open={importDialogOpen}
+        onClose={() => setImportDialogOpen(false)}
+        dbKey={dbKey || ""}
+        dbName={databases[0] || ""}
       />
 
       <CreateDatabaseDialog
@@ -695,6 +707,7 @@ function WorkSpaceTreePanel({
                       {/* <ContextMenuItem onClick={() => handleGroupAction("refresh", db.name)}>刷新列表</ContextMenuItem> */}
                       <ContextMenuSeparator />
                       <ContextMenuItem onClick={() => handleGroupAction("export_all", db.name)}>{t('export.title')}</ContextMenuItem>
+                      <ContextMenuItem onClick={() => handleGroupAction("import", db.name)}>{t('import.title')}</ContextMenuItem>
                       <ContextMenuSeparator />
                       <ContextMenuItem 
                         onMouseDown={(e) => e.stopPropagation()} // 提前阻止事件冒泡，避免点击后触发外层的点击事件
