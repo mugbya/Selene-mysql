@@ -156,7 +156,7 @@ export function ExportWizardDialog({
                 .join(",\n");
 
               if (valuesList) {
-                sqlOutput += `INSERT INTO \`${dbName}\`.\`${table}\` (\`${columns.join("`, `")}\`) VALUES\n${valuesList};\n\n`;
+                sqlOutput += `INSERT INTO \`${table}\` (\`${columns.join("`, `")}\`) VALUES\n${valuesList};\n\n`;
               }
             } else {
               // 普通模式：每行一个 INSERT
@@ -169,7 +169,7 @@ export function ExportWizardDialog({
                     return `'${String(cell).replace(/'/g, "''")}'`;
                   })
                   .join(", ");
-                sqlOutput += `INSERT INTO \`${dbName}\`.\`${table}\` (\`${columns.join("`, `")}\`) VALUES (${values});\n`;
+                sqlOutput += `INSERT INTO \`${table}\` (\`${columns.join("`, `")}\`) VALUES (${values});\n`;
               }
               sqlOutput += "\n";
             }

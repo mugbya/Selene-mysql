@@ -28,7 +28,13 @@
 
 - SHOW CREATE TABLE 添加数据库前缀：`SHOW CREATE TABLE \`${dbName}\`.\`${table}\``
 - SELECT 数据添加数据库前缀：`SELECT * FROM \`${dbName}\`.\`${table}\``
-- INSERT 语句添加数据库前缀：`INSERT INTO \`${dbName}\`.\`${table}\``
+
+### 3. 导出SQL格式
+
+- 导出查询时使用数据库前缀确保正确查询当前数据库
+- 导出的 INSERT 语句不包含数据库前缀，生成纯净的 SQL 语句
+  - 正确：`INSERT INTO \`table_name\` (...) VALUES (...)`
+  - 不带：`INSERT INTO \`database_name\`.\`table_name\` (...)`
 
 ### 3. 添加Tauri插件
 
